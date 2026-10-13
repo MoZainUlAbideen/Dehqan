@@ -6,7 +6,7 @@ _Last updated: 2026-10-13_
 - [ ] **M1 — Scaffold & data:** repo + uv setup, dataset download scripts, own field photos, baseline classifier, lab-vs-field eval
   - [x] Repo scaffold: git init, uv backend project, .gitignore, folder layout, PROGRESS.md
   - [x] Backend smoke test (pytest runs green)
-  - [ ] Dataset download scripts (PlantVillage, PlantDoc)
+  - [x] Dataset download scripts (PlantVillage 54,305 imgs/38 classes; PlantDoc 2,569 imgs/28 classes)
   - [ ] Baseline classifier trained on PlantVillage
   - [ ] Lab-vs-field eval (PlantVillage -> PlantDoc) with honest numbers
   - [ ] Own labelled field photos (held-out "real Pakistan" test set)

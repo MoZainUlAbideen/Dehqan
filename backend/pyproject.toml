@@ -3,7 +3,11 @@ name = "dehqan-backend"
 version = "0.1.0"
 description = "Voice-first crop doctor and market advisor for Pakistani farmers"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "datasets>=5.1.0",
+    "huggingface-hub>=2.2.0",
+    "pillow>=12.3.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
