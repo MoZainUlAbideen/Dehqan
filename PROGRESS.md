@@ -9,7 +9,7 @@ _Last updated: 2026-10-13_
   - [x] Dataset download scripts (PlantVillage 54,305 imgs/38 classes; PlantDoc 2,569 imgs/28 classes)
   - [x] Baseline classifier trained on PlantVillage (MobileNetV3-Small, 4,050 imgs, 3 epochs, CPU)
   - [x] Lab-vs-field eval: lab 95.5% -> field 11.8% accuracy (chance 3.7%), see evals/baseline_lab_vs_field.json
-  - [ ] Own labelled field photos (held-out "real Pakistan" test set)
+  - [x] Online field-photo sets instead of own photos: cotton_bd 2,137 + cotton_alt 1,373 + corn_anhui 600 (no wheat: unnamed classes). Own Pakistani photos still a future goal.
 - [ ] **M2 — Diagnosis v2**
 - [ ] **M3 — Agronomy RAG + safety**
 - [ ] **M4 — Voice**
