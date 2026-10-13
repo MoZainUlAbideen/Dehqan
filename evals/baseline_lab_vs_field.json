@@ -1,0 +1,26 @@
+{
+  "model": "mobilenet_v3_small (ImageNet-pretrained, fully fine-tuned)",
+  "train_data": "PlantVillage (lab), shared classes only",
+  "config": {
+    "per_class": 150,
+    "test_per_class": 60,
+    "epochs": 3,
+    "batch_size": 32,
+    "seed": 0,
+    "n_train": 4050,
+    "n_classes": 27
+  },
+  "lab_test": {
+    "n_images": 1615,
+    "accuracy": 0.9554,
+    "macro_f1": 0.956,
+    "majority_baseline_accuracy": 0.0372
+  },
+  "field_test": {
+    "n_images": 2567,
+    "accuracy": 0.1184,
+    "macro_f1": 0.0893,
+    "majority_baseline_accuracy": 0.0362
+  },
+  "lab_to_field_accuracy_drop": 0.837
+}
