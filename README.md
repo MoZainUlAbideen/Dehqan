@@ -225,6 +225,19 @@ Outcomes: `approved`, `no_dose` (registered, but no dose to give, so the farmer 
 
 **Blocked on data:** the registered and banned lists are *inputs*, and we do not yet have them. Searches point to the Punjab Agriculture Department's crop-wise agrochemical list (with WHO hazard class and antidotes) and the federal Department of Plant Protection, but from our machine those sites did not resolve, and we will not invent a pesticide list. The official wheat-rust advisories we found also appear to tell farmers to follow local expert advice and, as far as we could see, give no dose. If that holds, the honest product behaviour for wheat rust is often `no_dose` plus a referral, not a made-up number.
 
+### "Not a crop" gate (zero-shot CLIP)
+
+`vision/crop_gate.py` uses CLIP with no training: it scores a photo against text prompts for leaves ("a close-up photo of a healthy plant leaf", ...) and for other things ("a photo of a person", "a vehicle", ...), and rejects the photo if the leaf prompts hold less than half the probability. Dehqan then asks for a clearer leaf photo instead of diagnosing a dog. `vision/eval_crop_gate.py` tests it on 500 leaf photos (100 each from PlantVillage, PlantDoc, both cotton sets and corn) and 500 non-crop photos (Caltech-101), and compares it with a tempting shortcut: rejecting photos where the disease classifier's own confidence is low. Results: `evals/crop_gate.json`.
+
+| Method | Leaf photos accepted | Non-crop photos wrongly accepted | AUROC | Leaf photos accepted at ≤5% false accepts |
+|---|---|---|---|---|
+| **CLIP zero-shot gate** | **99.6%** | **1.0%** | **0.9997** | **99.8%** |
+| Classifier confidence (the shortcut) | n/a | n/a | 0.675 | 23.6% |
+
+- **CLIP separates the two groups almost perfectly, and the shortcut does not work.** A classifier's confidence is a poor "is this a leaf?" detector (AUROC 0.67), because it is often confident on photos it has never seen. This matches the corn result above.
+- **No tuning on the test set:** the threshold is the default 0.5 and the prompts were written before testing. The lowest per-source acceptance is 98% (PlantDoc field photos).
+- **This test is easy, so treat the numbers as an upper bound.** The negatives are everyday objects, faces and animals, and some of our "other" prompts name similar things, which flatters the result. We have **not** tested the cases that matter most to a farmer: bare soil, weeds, fruit, or a hand holding a leaf. Those need their own test set before this gate is trusted.
+
 ---
 
 ## Honest-evaluation principles
@@ -239,7 +252,7 @@ These apply to every model in this repo:
 ## Roadmap
 
 - [x] **M1 Scaffold & data:** repo, dataset scripts, baseline, lab-vs-field eval, field crop sets
-- [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *In progress: cotton classifier, abstention gate and field-tuned model done (field accuracy 11.5% to 47.4%, still not usable); severity segmentation done (grade accuracy 81.5% vs 42% baseline); "not a crop" gate in progress.*
+- [x] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *Done, with caveats: field accuracy rose from 11.5% to 47.4% but is still not usable for advice; severity grade accuracy 81.5% vs 42% baseline (wheat weakest); "not a crop" gate accepts 99.6% of leaf photos and wrongly accepts 1% of everyday objects (hard cases like soil and weeds untested).*
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router**
