@@ -176,6 +176,40 @@ Per-class recall: Leaf Redding 98%, Curl Virus 98%, Leaf Variegation 96%, Health
 - **Abstention does not rescue it.** The model is overconfident: reaching 90% accuracy means answering only **9%** of photos (95% accuracy: 6%), so at this stage it would defer almost every time.
 - **Caveats:** PlantDoc is scraped from the web and may contain near-duplicate photos on both sides of the split, so 47.4% may be optimistic. One run, one seed, 3 epochs on CPU with a small model; there is room to improve, and we have not yet tried a larger backbone or stronger augmentation.
 
+### Severity grading from lesion area
+
+Severity is the share of the leaf covered by disease spots: `spots / (spots + healthy leaf)`. `vision/train_severity.py` compares three estimators on the same held-out photos, using [PDSNet](https://huggingface.co/datasets/Project-AgML/pdsnet_field_plant_disease_segmentation): 240 field photos with pixel masks (apple cedar rust, soybean bacterial blight, **wheat stripe rust** from Henan, China), split 159 train / 81 test within each crop. Results are in `evals/severity.json`.
+
+| Estimator | Severity error (MAE, percentage points) | Correlation with truth | Grade accuracy (mild / moderate / severe) |
+|---|---|---|---|
+| Naive: always predict the training mean | 13.05 | 0.00 | 42.0% |
+| Colour thresholds (HSV, no learning) | 11.43 | 0.47 | 53.1% |
+| **Learned segmentation** (LR-ASPP MobileNetV3, 12 epochs, CPU) | **8.01** | **0.95** | **81.5%** |
+
+Lesion overlap (IoU) for the learned model: 0.53.
+
+Per crop (27 test photos each): apple MAE 0.7 points, soybean 8.0, **wheat 15.4** (grade accuracy 59%, correlation 0.91).
+
+- **The learned model clearly beats both baselines.** The colour-threshold approach is only slightly better than guessing the mean, because soil, shadows and rust are hard to tell apart by colour alone.
+- **Wheat is the weak spot.** Its severity range is the widest (2% to 66%), and the model is least accurate there even though its ranking of photos is good (correlation 0.91), so its estimates look systematically off in scale. We have not yet investigated the direction of the bias.
+- **Apple's 100% grade accuracy means little:** every apple photo is "mild", so guessing "mild" also scores 100%.
+- **Grades are our own cut-offs** (mild below 10%, moderate 10 to 30%, severe 30% and above), chosen from the spread of this data. They are not an official agronomic scale.
+- **Small test set, one run, one split.** 81 photos from three crop-disease pairs, photographed in China or from public sources. This is a proof the approach works, not evidence it will hold in Pakistani fields. The data is CC-BY-NC (non-commercial).
+
+### Corn field test (Anhui, China)
+
+`vision/eval_corn.py` runs the two PlantVillage-trained models on a corn dataset neither has seen, photographed in Chinese fields (`evals/corn_field.json`). Two of its six diseases (Common Rust, Northern Leaf Blight; 200 photos) are diseases our models know. The other four (400 photos) are not in their label set.
+
+| Model | Accuracy on the 2 known diseases (all 27 classes) | Same, if told "it is corn" | Guessing one of the two |
+|---|---|---|---|
+| Lab-only baseline | **4.5%** | 23.0% | 50% |
+| Lab + PlantDoc field-tuned | **72.0%** | 76.0% | 50% |
+
+- **The lab-only model fails completely on real corn photos:** 4.5% is far below even a coin flip between the two diseases.
+- **Field data helps a lot:** the field-tuned model reaches 72%, comfortably above the 50% guess. It saw PlantDoc corn photos but never this dataset.
+- **On the 4 unseen diseases the models stay confident anyway:** the field-tuned model has mean confidence 0.69, and **20%** of those photos get >90% confidence, even though any disease name it gives is wrong. A confidence threshold alone will not catch unknown diseases. (Lab-only baseline: 23% above 90%.)
+- Only one dataset and two diseases, so this is a spot check, not a corn benchmark.
+
 ---
 
 ## Honest-evaluation principles
@@ -190,7 +224,7 @@ These apply to every model in this repo:
 ## Roadmap
 
 - [x] **M1 Scaffold & data:** repo, dataset scripts, baseline, lab-vs-field eval, field crop sets
-- [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *In progress: cotton classifier, abstention gate and field-tuned model done (field accuracy 11.5% to 47.4%, still not usable); segmentation and "not a crop" gate not started.*
+- [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *In progress: cotton classifier, abstention gate and field-tuned model done (field accuracy 11.5% to 47.4%, still not usable); severity segmentation done (grade accuracy 81.5% vs 42% baseline); "not a crop" gate in progress.*
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router**
@@ -213,6 +247,10 @@ uv run python -m vision.train_baseline          # ~15 min on CPU; writes ../eval
 uv run python -m vision.train_cotton            # ~10 min on CPU; writes ../evals/cotton_cross_source.json
 uv run python -m vision.eval_abstention         # seconds; writes ../evals/abstention_cotton.json
 uv run python -m vision.train_field_tuned       # ~27 min on CPU; writes ../evals/field_tuned.json
+uv run python -m vision.download_pdsnet         # 11 MB: field photos with lesion masks
+uv run python -m vision.train_severity          # ~22 min on CPU; writes ../evals/severity.json
+uv run python -m vision.download_negatives      # Caltech-101 non-crop photos, for the "not a crop" gate
+uv run python -m vision.download_clip           # CLIP model files (~600 MB)
 ```
 
 Datasets and model weights are gitignored. Only the download scripts and eval results are committed.

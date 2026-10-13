@@ -1,0 +1,51 @@
+{
+  "data": "PDSNet field photos (apple cedar rust, soybean bacterial blight, wheat stripe rust)",
+  "grades": "mild <10%, moderate 10-30%, severe >=30% (our cut-offs)",
+  "config": {
+    "epochs": 12,
+    "batch_size": 8,
+    "limit": null,
+    "seed": 0,
+    "n_train": 159,
+    "n_test": 81,
+    "image_size": 384
+  },
+  "naive_mean_baseline": {
+    "severity_mae_points": 13.05,
+    "pearson_r": -0.0,
+    "grade_accuracy": 0.4198
+  },
+  "colour_threshold_baseline": {
+    "severity_mae_points": 11.43,
+    "pearson_r": 0.472,
+    "grade_accuracy": 0.5309,
+    "n_no_leaf_found": 0
+  },
+  "learned_segmentation": {
+    "severity_mae_points": 8.01,
+    "pearson_r": 0.949,
+    "grade_accuracy": 0.8148,
+    "n_no_leaf_found": 0,
+    "lesion_iou": 0.5316
+  },
+  "learned_by_crop": {
+    "apple": {
+      "n": 27,
+      "severity_mae_points": 0.68,
+      "pearson_r": 0.718,
+      "grade_accuracy": 1.0
+    },
+    "soybean": {
+      "n": 27,
+      "severity_mae_points": 7.98,
+      "pearson_r": 0.951,
+      "grade_accuracy": 0.8519
+    },
+    "wheat": {
+      "n": 27,
+      "severity_mae_points": 15.36,
+      "pearson_r": 0.91,
+      "grade_accuracy": 0.5926
+    }
+  }
+}

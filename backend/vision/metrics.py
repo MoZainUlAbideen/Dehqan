@@ -29,6 +29,23 @@ def per_class_recall(y_true: list[int], y_pred: list[int], names: list[str]) -> 
     return out
 
 
+def auroc(pos_scores: list[float], neg_scores: list[float]) -> float:
+    """Chance that a random positive scores higher than a random negative (ties count half).
+    1.0 = perfect separation, 0.5 = no better than a coin flip."""
+    wins = sum((p > n) + 0.5 * (p == n) for p in pos_scores for n in neg_scores)
+    return wins / (len(pos_scores) * len(neg_scores))
+
+
+def tpr_at_max_fpr(pos_scores: list[float], neg_scores: list[float], max_fpr: float) -> float:
+    """Best true-positive rate over thresholds whose false-positive rate is <= max_fpr."""
+    best = 0.0
+    for t in sorted(set(pos_scores + neg_scores)):
+        fpr = sum(n >= t for n in neg_scores) / len(neg_scores)
+        if fpr <= max_fpr:
+            best = max(best, sum(p >= t for p in pos_scores) / len(pos_scores))
+    return best
+
+
 def majority_baseline_accuracy(train_labels: list[int], y_true: list[int]) -> float:
     """Accuracy of a dumb model that always predicts the most common training class."""
     most_common = Counter(train_labels).most_common(1)[0][0]
