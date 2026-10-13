@@ -1,0 +1,34 @@
+﻿# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Data, models, big files (download scripts only are committed)
+data/*
+!data/.gitkeep
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+*.onnx
+*.bin
+*.zip
+*.tif
+*.tiff
+
+# Frontend
+node_modules/
+.next/
+.vercel/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

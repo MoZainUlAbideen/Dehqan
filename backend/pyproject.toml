@@ -1,0 +1,15 @@
+[project]
+name = "dehqan-backend"
+version = "0.1.0"
+description = "Voice-first crop doctor and market advisor for Pakistani farmers"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
