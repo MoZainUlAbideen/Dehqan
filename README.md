@@ -210,6 +210,21 @@ Per crop (27 test photos each): apple MAE 0.7 points, soybean 8.0, **wheat 15.4*
 - **On the 4 unseen diseases the models stay confident anyway:** the field-tuned model has mean confidence 0.69, and **20%** of those photos get >90% confidence, even though any disease name it gives is wrong. A confidence threshold alone will not catch unknown diseases. (Lab-only baseline: 23% above 90%.)
 - Only one dataset and two diseases, so this is a spot check, not a corn benchmark.
 
+### Safety guardrail (Milestone 3, started)
+
+`rag/guardrail.py` decides whether a treatment recommendation may be shown to a farmer. It enforces the two rules the product depends on:
+
+1. **Nothing banned or unregistered is ever recommended.** Banned wins over everything, even if the product also appears on the registered list.
+2. **Every dose and every protective-gear claim must be traced to a source.** Each claim carries a citation (source id + exact quote). The guardrail checks that the quote really appears in that source, and that the dose or PPE wording appears inside the quote. A claim that cannot be traced is rejected, however plausible it sounds.
+
+Outcomes: `approved`, `no_dose` (registered, but no dose to give, so the farmer is sent to the extension office), or `rejected`.
+
+**A bug the tests caught:** the first version matched with plain substring search, which would accept a dose of "20 ml per acre" against a source saying "1**20** ml per acre", or "5 ml" against "0.5 ml". For a pesticide that is a dangerous false accept. Matching is now whole-token and number-aware (tests: `tests/test_guardrail.py`, 14 cases).
+
+**What it does not do:** it proves a dose is *traceable* to a document, not that the sentence means what we think. A source saying "do NOT spray more than 200 ml" would still verify the dose "200 ml". That is why the faithfulness eval and red-team suite (still to build) matter.
+
+**Blocked on data:** the registered and banned lists are *inputs*, and we do not yet have them. Searches point to the Punjab Agriculture Department's crop-wise agrochemical list (with WHO hazard class and antidotes) and the federal Department of Plant Protection, but from our machine those sites did not resolve, and we will not invent a pesticide list. The official wheat-rust advisories we found also appear to tell farmers to follow local expert advice and, as far as we could see, give no dose. If that holds, the honest product behaviour for wheat rust is often `no_dose` plus a referral, not a made-up number.
+
 ---
 
 ## Honest-evaluation principles
@@ -225,7 +240,7 @@ These apply to every model in this repo:
 
 - [x] **M1 Scaffold & data:** repo, dataset scripts, baseline, lab-vs-field eval, field crop sets
 - [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *In progress: cotton classifier, abstention gate and field-tuned model done (field accuracy 11.5% to 47.4%, still not usable); severity segmentation done (grade accuracy 81.5% vs 42% baseline); "not a crop" gate in progress.*
-- [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite
+- [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router**
 - [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits

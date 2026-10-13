@@ -18,6 +18,10 @@ _Last updated: 2026-10-13_
   - [x] Severity segmentation (PDSNet, 81 test photos): MAE 8.0 pts vs 13.1 naive, grade acc 81.5% vs 42.0%; wheat weakest (MAE 15.4)
   - [ ] Zero-shot "not a crop" gate (CLIP): code + tests done, eval waiting on CLIP weights download
 - [ ] **M3 — Agronomy RAG + safety**
+  - [x] Guardrail logic (rag/guardrail.py): banned/registered check + verbatim-citation check for dose and PPE, 14 tests; fixed number-boundary bug (20 ml vs 120 ml)
+  - [ ] BLOCKED (needs user): get official registered + banned pesticide lists and advisory PDFs into data/advisories/ (gov sites unreachable from this machine)
+  - [ ] Ingest advisories, retrieval, cited answers
+  - [ ] Faithfulness eval + red-team suite (100% pass in CI)
 - [ ] **M4 — Voice**
 - [ ] **M5 — Field, weather, market agents + supervisor router**
 - [ ] **M6 — Live product**

@@ -14,6 +14,7 @@ Limitation: these are everyday-object photos. Harder negatives a farmer might se
 fruit, a hand holding a leaf) are NOT covered; the README says so.
 """
 
+import http.client
 import random
 import urllib.request
 from pathlib import Path
@@ -88,7 +89,7 @@ def parallel_download(url: str, dest: Path, workers: int = 8, chunk_mb: int = 8)
                 done += len(data)
                 print(f"  downloaded {done / 1e6:.0f}/{total / 1e6:.0f} MB", flush=True)
                 return
-            except OSError:
+            except (OSError, http.client.HTTPException):
                 if attempt == 7:
                     raise
                 time.sleep(min(2 ** attempt, 30))
