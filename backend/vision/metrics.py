@@ -19,6 +19,16 @@ def macro_f1(y_true: list[int], y_pred: list[int]) -> float:
     return sum(f1s) / len(f1s)
 
 
+def per_class_recall(y_true: list[int], y_pred: list[int], names: list[str]) -> dict[str, float]:
+    """Share of each class's images that were labelled correctly (only classes present in y_true)."""
+    out = {}
+    for c, name in enumerate(names):
+        idxs = [i for i, t in enumerate(y_true) if t == c]
+        if idxs:
+            out[name] = round(sum(y_pred[i] == c for i in idxs) / len(idxs), 4)
+    return out
+
+
 def majority_baseline_accuracy(train_labels: list[int], y_true: list[int]) -> float:
     """Accuracy of a dumb model that always predicts the most common training class."""
     most_common = Counter(train_labels).most_common(1)[0][0]

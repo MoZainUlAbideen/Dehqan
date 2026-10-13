@@ -45,3 +45,36 @@ def test_metrics():
     assert accuracy(y_true, y_pred) == 0.75
     assert macro_f1(y_true, y_pred) == pytest.approx((2 / 3 + 0.8) / 2)
     assert majority_baseline_accuracy([1, 1, 0], y_true) == 0.5
+
+
+def test_folder_samples_labels_by_position_and_ignores_unknown(tmp_path):
+    from vision.samples import folder_samples
+
+    for name in ("a", "b", "other"):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "x.jpg").touch()
+
+    samples = folder_samples(tmp_path, ["b", "a", "missing"])
+
+    assert sorted((p.parent.name, label) for p, label in samples) == [("a", 1), ("b", 0)]
+
+
+def test_stratified_split_keeps_every_class_in_both_sides_and_has_no_overlap(tmp_path):
+    from pathlib import Path
+
+    from vision.samples import stratified_split
+
+    samples = [(Path(f"c0_{i}.jpg"), 0) for i in range(10)] + [(Path(f"c1_{i}.jpg"), 1) for i in range(5)]
+
+    train, test = stratified_split(samples, 0.2, seed=1)
+
+    assert {label for _, label in train} == {0, 1} and {label for _, label in test} == {0, 1}
+    assert sum(label == 0 for _, label in test) == 2 and sum(label == 1 for _, label in test) == 1
+    assert not set(train) & set(test) and len(train) + len(test) == 15
+    assert stratified_split(samples, 0.2, seed=1) == (train, test)  # reproducible
+
+
+def test_per_class_recall():
+    from vision.metrics import per_class_recall
+
+    assert per_class_recall([0, 0, 1, 1], [0, 1, 1, 1], ["a", "b", "c"]) == {"a": 0.5, "b": 1.0}

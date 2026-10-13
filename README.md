@@ -124,6 +124,31 @@ No public dataset covers Pakistani fields, so we assembled the closest real fiel
 - **None of this is from Pakistan.** Bangladesh and China are the nearest public sources. Our own labelled Pakistani photos remain a goal.
 - **No wheat.** The only public wheat-disease set we found on the Hub ([wheat_disease_detection](https://huggingface.co/datasets/Project-AgML/wheat_disease_detection)) labels its 7 classes only as `0`-`6`, and we could not verify the names from the card, Zenodo record or paper. We will not guess disease names for a product that gives spray advice.
 
+### Cotton classifier (first Milestone 2 result)
+
+`vision/train_cotton.py` fine-tunes the same MobileNetV3-Small on the Bangladesh cotton set (1,710 train images, 7 classes, 4 epochs, CPU, ~10 minutes). It is tested two ways: a held-out split of the same source, and the second cotton set, which came from a different group and camera setup. Results are in `evals/cotton_cross_source.json`.
+
+**Same-source test (427 images)**
+
+| | Accuracy | Macro-F1 | Always-guess-majority |
+|---|---|---|---|
+| 7-class | **82.0%** | 0.778 | 27.2% |
+
+Per-class recall: Leaf Redding 98%, Curl Virus 98%, Leaf Variegation 96%, Healthy 88%, Bacterial Blight 78%, Herbicide Damage 73%, **Leaf Hopper Jassids 11%** (the model mostly misses this class).
+
+**Cross-source test (551 images, only the 2 classes the sets share)**
+
+| Scoring | Accuracy | Reference |
+|---|---|---|
+| Strict (pick 1 of 7 classes) | **0.5%** | |
+| Shared-only (choose between the 2 shared classes) | **70.0%** | chance 50%, always-guess-majority **60.4%** |
+
+**What this means, honestly**
+- **Cross-source accuracy barely beats the dumb baseline** (70.0% vs 60.4%). The model calls almost everything "Bacterial Blight" (99% recall) and recognises only 51% of healthy leaves. It learned this one source's look, not cotton disease in general.
+- **Strict accuracy is near zero:** on photos from another source the model rarely picks the right class out of all 7.
+- **The 82% same-source number is probably optimistic.** Photos from the same plants and sessions likely land on both sides of the split. Treat it as an upper bound.
+- This is the same lab-to-field pattern as the baseline above, now on cotton: a model that scores well on its own data does not carry over to new cameras and fields. Fixing it (stronger augmentation, training on mixed sources, confidence-based abstention) is the rest of Milestone 2.
+
 ---
 
 ## Honest-evaluation principles
@@ -138,7 +163,7 @@ These apply to every model in this repo:
 ## Roadmap
 
 - [x] **M1 Scaffold & data:** repo, dataset scripts, baseline, lab-vs-field eval, field crop sets
-- [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy)
+- [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *Started: cotton classifier + cross-source eval done; it does not generalise yet.*
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router**
@@ -158,6 +183,7 @@ uv run pytest                                   # unit tests
 uv run python -m vision.download_data           # PlantVillage + PlantDoc into ../data
 uv run python -m vision.download_field_crops    # cotton + corn field sets
 uv run python -m vision.train_baseline          # ~15 min on CPU; writes ../evals/baseline_lab_vs_field.json
+uv run python -m vision.train_cotton            # ~10 min on CPU; writes ../evals/cotton_cross_source.json
 ```
 
 Datasets and model weights are gitignored. Only the download scripts and eval results are committed.

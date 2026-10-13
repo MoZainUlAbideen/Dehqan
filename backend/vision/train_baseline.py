@@ -57,14 +57,35 @@ def make_model(n_classes: int) -> nn.Module:
     return model
 
 
-def predict(model: nn.Module, samples: list[Sample], batch_size: int = 64) -> list[int]:
+def fit(model: nn.Module, train: list[Sample], epochs: int, batch_size: int) -> None:
+    """Fine-tune the whole model with AdamW; prints loss per epoch."""
+    loader = DataLoader(
+        ImageListDataset(train, TRAIN_TF), batch_size=batch_size, shuffle=True, num_workers=0
+    )
+    opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    loss_fn = nn.CrossEntropyLoss()
+    start = time.time()
+    for epoch in range(epochs):
+        model.train()
+        total = 0.0
+        for x, y in loader:
+            opt.zero_grad()
+            loss = loss_fn(model(x), y)
+            loss.backward()
+            opt.step()
+            total += loss.item() * len(y)
+        print(f"epoch {epoch + 1}/{epochs} loss={total / len(train):.4f} ({time.time() - start:.0f}s)", flush=True)
+
+
+def predict_logits(model: nn.Module, samples: list[Sample], batch_size: int = 64) -> torch.Tensor:
     model.eval()
     loader = DataLoader(ImageListDataset(samples, EVAL_TF), batch_size=batch_size, num_workers=0)
-    preds: list[int] = []
     with torch.no_grad():
-        for x, _ in loader:
-            preds += model(x).argmax(1).tolist()
-    return preds
+        return torch.cat([model(x) for x, _ in loader])
+
+
+def predict(model: nn.Module, samples: list[Sample], batch_size: int = 64) -> list[int]:
+    return predict_logits(model, samples, batch_size).argmax(1).tolist()
 
 
 def evaluate(name: str, model: nn.Module, samples: list[Sample], train_labels: list[int]) -> dict:
@@ -97,23 +118,7 @@ def main() -> None:
     print(f"train={len(train)} lab_test={len(lab_test)} field_test={len(field_test)} classes={len(SHARED_CLASSES)}")
 
     model = make_model(len(SHARED_CLASSES))
-    loader = DataLoader(
-        ImageListDataset(train, TRAIN_TF), batch_size=args.batch_size, shuffle=True, num_workers=0
-    )
-    opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
-    loss_fn = nn.CrossEntropyLoss()
-
-    start = time.time()
-    for epoch in range(args.epochs):
-        model.train()
-        total = 0.0
-        for x, y in loader:
-            opt.zero_grad()
-            loss = loss_fn(model(x), y)
-            loss.backward()
-            opt.step()
-            total += loss.item() * len(y)
-        print(f"epoch {epoch + 1}/{args.epochs} loss={total / len(train):.4f} ({time.time() - start:.0f}s)")
+    fit(model, train, args.epochs, args.batch_size)
 
     results = {
         "model": "mobilenet_v3_small (ImageNet-pretrained, fully fine-tuned)",
