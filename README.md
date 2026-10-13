@@ -149,6 +149,33 @@ Per-class recall: Leaf Redding 98%, Curl Virus 98%, Leaf Variegation 96%, Health
 - **The 82% same-source number is probably optimistic.** Photos from the same plants and sessions likely land on both sides of the split. Treat it as an upper bound.
 - This is the same lab-to-field pattern as the baseline above, now on cotton: a model that scores well on its own data does not carry over to new cameras and fields. Fixing it (stronger augmentation, training on mixed sources, confidence-based abstention) is the rest of Milestone 2.
 
+### Abstention: saying "I'm not sure"
+
+`vision/abstention.py` answers only when the model's top softmax probability is above a threshold, otherwise Dehqan defers to the extension office. `vision/eval_abstention.py` measures the trade-off on the cotton model (`evals/abstention_cotton.json`). *Coverage* is the share of photos answered, and *selective accuracy* is accuracy on only those.
+
+| Test set | Answer everything | Best coverage at ≥90% accuracy | Best coverage at ≥95% accuracy |
+|---|---|---|---|
+| Same source (427 images) | 82.0% | **85%** of photos | **67%** of photos |
+| Different source (551 images, 2 classes) | 70.0% | **27%** of photos | **25%** of photos |
+
+- **On familiar photos abstention works well:** answering 85% of photos at 90% accuracy beats answering everything at 82%.
+- **On photos from a new source it helps much less.** To reach 90% accuracy the model must defer on ~73% of photos, because it is often confidently wrong on unfamiliar cameras. Confidence is a weak safety net under distribution shift.
+- **These thresholds were picked on the test data itself,** so the numbers are optimistic. A production threshold would be chosen on a separate validation split.
+
+### Field-tuned model: how much does a little field data help?
+
+`vision/train_field_tuned.py` retrains on PlantVillage (lab) **plus 70% of PlantDoc (field)** and tests on the held-out 30% of PlantDoc (768 images). The old lab-only baseline is scored on the *same* 768 images. Results are in `evals/field_tuned.json`.
+
+| Model | Field accuracy | Macro-F1 | Lab accuracy | Always-guess-majority (field) |
+|---|---|---|---|---|
+| Lab-only baseline | **11.5%** | 0.088 | 95.5% | 3.7% |
+| Lab + 1,799 field photos | **47.4%** | 0.433 | 93.3% | 7.4% |
+
+- **Field accuracy rises about 4x (11.5% to 47.4%)** after adding 1,799 field photos, at a cost of about 2 points of lab accuracy.
+- **47% is still not usable for spray advice.** More than half of field photos get the wrong label.
+- **Abstention does not rescue it.** The model is overconfident: reaching 90% accuracy means answering only **9%** of photos (95% accuracy: 6%), so at this stage it would defer almost every time.
+- **Caveats:** PlantDoc is scraped from the web and may contain near-duplicate photos on both sides of the split, so 47.4% may be optimistic. One run, one seed, 3 epochs on CPU with a small model; there is room to improve, and we have not yet tried a larger backbone or stronger augmentation.
+
 ---
 
 ## Honest-evaluation principles
@@ -163,7 +190,7 @@ These apply to every model in this repo:
 ## Roadmap
 
 - [x] **M1 Scaffold & data:** repo, dataset scripts, baseline, lab-vs-field eval, field crop sets
-- [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *Started: cotton classifier + cross-source eval done; it does not generalise yet.*
+- [ ] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *In progress: cotton classifier, abstention gate and field-tuned model done (field accuracy 11.5% to 47.4%, still not usable); segmentation and "not a crop" gate not started.*
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router**
@@ -184,6 +211,8 @@ uv run python -m vision.download_data           # PlantVillage + PlantDoc into .
 uv run python -m vision.download_field_crops    # cotton + corn field sets
 uv run python -m vision.train_baseline          # ~15 min on CPU; writes ../evals/baseline_lab_vs_field.json
 uv run python -m vision.train_cotton            # ~10 min on CPU; writes ../evals/cotton_cross_source.json
+uv run python -m vision.eval_abstention         # seconds; writes ../evals/abstention_cotton.json
+uv run python -m vision.train_field_tuned       # ~27 min on CPU; writes ../evals/field_tuned.json
 ```
 
 Datasets and model weights are gitignored. Only the download scripts and eval results are committed.

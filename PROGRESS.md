@@ -13,8 +13,8 @@ _Last updated: 2026-10-13_
 - [ ] **M2 — Diagnosis v2**
   - [x] Cotton classifier + cross-source eval: same-source 82.0%, cross-source 70.0% vs 60.4% majority baseline (does not generalise yet), Leaf Hopper Jassids recall 11%
   - [ ] Corn field test with baseline
-  - [ ] Field-tuned model (train on mixed sources), measure gap closed
-  - [ ] Abstention gate (coverage vs accuracy)
+  - [x] Field-tuned model (lab + 70% PlantDoc): held-out field accuracy 11.5% -> 47.4% (majority 7.4%), lab 93.3%; still not usable
+  - [x] Abstention gate: cotton same-source 85% coverage @90% acc; cross-source 27%; field-tuned model only 9% coverage @90% (overconfident)
   - [ ] Severity segmentation + "not a crop" gate
 - [ ] **M3 — Agronomy RAG + safety**
 - [ ] **M4 — Voice**
