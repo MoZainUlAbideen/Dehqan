@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* Earthy greens + wheat gold. Tokens are defined once and swapped for dark mode. */
+:root {
+  --surface: #faf7ef;        /* warm paper */
+  --surface-2: #f2eddf;      /* cards */
+  --surface-3: #e8e1cd;      /* inset / tracks */
+  --ink: #1f2a1c;
+  --ink-2: #4f5a49;
+  --ink-3: #6f7868;
+  --line: #d9d2bd;
+  --green: #2f6b3a;          /* forest: our model / primary action */
+  --green-ink: #ffffff;
+  --gold: #b8841a;           /* wheat: highlights */
+  --gold-soft: #f3e3b3;
+  --baseline: #9c9b8e;       /* de-emphasised comparison marks */
+  --good: #2f6b3a;
+  --warn: #9a6a00;
+  --bad: #a3392c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #12170e;
+    --surface-2: #1b2216;
+    --surface-3: #263020;
+    --ink: #eef0e4;
+    --ink-2: #bcc4ad;
+    --ink-3: #96a088;
+    --line: #333d2b;
+    --green: #6fbf7c;
+    --green-ink: #0e1a0f;
+    --gold: #e0b04a;
+    --gold-soft: #3a3016;
+    --baseline: #7d7f72;
+    --good: #6fbf7c;
+    --warn: #e0b04a;
+    --bad: #e08373;
+  }
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-green: var(--green);
+  --color-green-ink: var(--green-ink);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-baseline: var(--baseline);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-urdu: var(--font-urdu);
+}
+
+html {
+  background: var(--surface);
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.font-urdu {
+  font-family: var(--font-urdu), serif;
+  line-height: 2;
+}
+
+/* A subtle wheat-field texture for the hero background */
+.field-texture {
+  background-image:
+    radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 45%),
+    radial-gradient(circle at 85% 60%, color-mix(in srgb, var(--green) 14%, transparent), transparent 50%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

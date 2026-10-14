@@ -1,6 +1,6 @@
 ﻿# PROGRESS.md — Dehqan
 
-_Last updated: 2026-10-13_
+_Last updated: 2026-10-14_
 
 ## Milestones
 - [x] **M1 — Scaffold & data:** repo + uv setup, dataset download scripts, own field photos, baseline classifier, lab-vs-field eval
@@ -24,8 +24,18 @@ _Last updated: 2026-10-13_
   - [ ] Faithfulness eval + red-team suite (100% pass in CI)
 - [ ] **M4 — Voice**
 - [ ] **M5 — Field, weather, market agents + supervisor router**
+  - [x] Weather agent: Open-Meteo client (cached, tested vs real saved response) + spray-window logic (rules-of-thumb thresholds, flagged as not official), 11 tests
+  - [ ] Field agent (Sentinel-2 NDVI)
+  - [ ] Market agent (mandi prices + forecast vs naive baseline)
+  - [ ] Supervisor router
 - [ ] **M6 — Live product**
+  - [x] FastAPI backend: /diagnose (gate -> classifier -> abstention -> severity), /spray-window, /health, /about; upload validation, downscaling, per-IP rate limit, CORS; 72 tests; run live with real models
+  - [x] Next.js website: home, diagnose, spray window (map + hour grid), accuracy page from real eval JSON; lint + typecheck + build clean; checked in headless Edge (dark mode only)
+  - [ ] DECISION NEEDED: deploy target. Render free (512 MB) cannot hold torch + CLIP; Hugging Face Spaces (free, 16 GB) can. Weights must go to the HF Hub
+  - [ ] Dockerfile + deploy backend; deploy frontend to Vercel (set NEXT_PUBLIC_API_URL)
+  - [ ] WhatsApp sandbox
 - [ ] **M7 — LLMOps**
 
 ## Session log
 - 2026-10-13: Scaffolded repo.
+- 2026-10-14: Weather agent, FastAPI backend, Next.js website; M3 still blocked on official pesticide data.

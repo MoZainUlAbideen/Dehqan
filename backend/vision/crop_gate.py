@@ -45,15 +45,19 @@ class CropGate:
         self.model = CLIPModel.from_pretrained(model_id).eval()
         self.processor = CLIPProcessor.from_pretrained(model_id)
 
-    def scores(self, paths: list[Path], batch_size: int = 32) -> list[float]:
+    def score_images(self, images: list) -> list[float]:
+        """Leaf score for a batch of PIL images."""
         import torch
+
+        inputs = self.processor(text=PROMPTS, images=images, return_tensors="pt", padding=True)
+        with torch.no_grad():
+            probs = self.model(**inputs).logits_per_image.softmax(dim=1)
+        return [leaf_score(row.tolist()) for row in probs]
+
+    def scores(self, paths: list[Path], batch_size: int = 32) -> list[float]:
         from PIL import Image
 
         out: list[float] = []
         for i in range(0, len(paths), batch_size):
-            images = [Image.open(p).convert("RGB") for p in paths[i : i + batch_size]]
-            inputs = self.processor(text=PROMPTS, images=images, return_tensors="pt", padding=True)
-            with torch.no_grad():
-                probs = self.model(**inputs).logits_per_image.softmax(dim=1)
-            out += [leaf_score(row.tolist()) for row in probs]
+            out += self.score_images([Image.open(p).convert("RGB") for p in paths[i : i + batch_size]])
         return out

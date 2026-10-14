@@ -1,0 +1,25 @@
+{
+  "n_positive": 500,
+  "n_negative": 500,
+  "clip_gate": {
+    "threshold": 0.5,
+    "true_positive_rate": 0.996,
+    "false_positive_rate": 0.01,
+    "auroc": 0.9997,
+    "tpr_at_5pct_fpr": 0.998,
+    "tpr_by_positive_source": {
+      "plantvillage_lab": 1.0,
+      "plantdoc_field": 0.98,
+      "cotton_bd": 1.0,
+      "cotton_alt": 1.0,
+      "corn_anhui": 1.0
+    },
+    "fpr_by_negative_source": {
+      "caltech101": 0.01
+    }
+  },
+  "baseline_classifier_confidence": {
+    "auroc": 0.6745,
+    "tpr_at_5pct_fpr": 0.236
+  }
+}

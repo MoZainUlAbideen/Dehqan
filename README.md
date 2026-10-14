@@ -4,7 +4,7 @@
 
 A farmer sends a voice note (Urdu / Pashto / Punjabi) and a photo of a sick leaf. Dehqan diagnoses the problem, grades how severe it is, recommends **only pesticides registered in Pakistan** with dose and safety gear taken from cited official advisories, checks the field from satellite, finds a safe spray window from the weather forecast, suggests whether to sell or hold at the mandi, and answers as a **spoken voice note** in the farmer's language.
 
-> **Status: work in progress (Milestone 1 of 7).** This README separates what is **built and measured** from what is **planned**. Nothing in the "Built" section is aspirational.
+> **Status: work in progress. Milestones 1 and 2 are done, and there is a working API and website; the pesticide-advice, voice, satellite and market parts are not built.** This README separates what is **built and measured** from what is **planned**. Nothing in the "Built" section is aspirational.
 
 ---
 
@@ -62,18 +62,33 @@ flowchart TD
 
 ```
 backend/
-  app/            FastAPI app, agents, routers          (planned)
+  app/            FastAPI app, diagnosis pipeline, spray window  (built)
   vision/         data download, training, eval          (built: M1)
   voice/          ASR / TTS                              (planned)
-  rag/            ingestion, retrieval, safety guardrail (planned)
-  data_sources/   Open-Meteo, Sentinel, mandi scraper    (planned)
+  rag/            safety guardrail (built); retrieval (planned)
+  data_sources/   Open-Meteo (built); Sentinel, mandi (planned)
   tests/          pytest
 evals/            committed eval results (JSON)
 data/             gitignored; download scripts only are committed
-frontend/         Next.js app                            (planned)
+frontend/         Next.js app                            (built)
 ```
 
 ---
+
+## What runs today
+
+An end-to-end slice you can run locally (see "Run it"):
+
+| Piece | What it does | Where |
+|---|---|---|
+| `POST /diagnose` | Photo in; checks it is a leaf (CLIP), names a likely condition or says "not sure", and estimates severity. Always returns `limitations` for the UI to show | `backend/app/` |
+| `POST /spray-window` | Live 5-day Open-Meteo forecast in; low-wind, dry, mild-weather hours out (thresholds are rules of thumb, and the response says so) | `backend/app/spray_window.py` |
+| Safety guardrail | Rejects banned or unregistered pesticides and any dose not quoted verbatim from a cited source. Not yet wired to the API: it has no pesticide data to work with | `backend/rag/guardrail.py` |
+| Website | Home, diagnose (upload or camera), spray window (map and hour-by-hour grid), and a "How we measured accuracy" page that reads the real eval files | `frontend/` |
+
+Production safeguards in the API: upload type and size limits, photos downscaled before inference, per-IP rate limiting, CORS restricted to configured origins, and a 503 when models are not loaded. 72 backend tests pass, using fakes for the models and the weather service so they need no network.
+
+**Honest limits of the app right now:** the classifier covers 27 conditions across 14 crops, and **wheat and cotton are not among them**. At the live confidence setting (0.9) it answers about a quarter of field photos and is right on about four in five of those. It gives **no treatment advice** because the official pesticide lists are not loaded. The website was checked in a headless browser (dark theme); light mode and a full browser upload were not visually verified.
 
 ## Built so far (Milestone 1)
 
@@ -255,15 +270,30 @@ These apply to every model in this repo:
 - [x] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *Done, with caveats: field accuracy rose from 11.5% to 47.4% but is still not usable for advice; severity grade accuracy 81.5% vs 42% baseline (wheat weakest); "not a crop" gate accepts 99.6% of leaf photos and wrongly accepts 1% of everyday objects (hard cases like soil and weeds untested).*
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
-- [ ] **M5 Field / weather / market agents + supervisor router**
-- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits
+- [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent done (spray windows); satellite, market and the supervisor router not started.*
+- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API, rate limiting and website built and run locally; not deployed yet.*
 - [ ] **M7 LLMOps:** Langfuse, CI eval gate, drift monitoring, nightly refresh
 
 Fallback scope if time is tight: 2 crops (wheat, cotton), 2 languages (Urdu, Pashto), 1 mandi region.
 
 ## Run it
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.12. Everything runs on CPU.
+Requires [uv](https://docs.astral.sh/uv/), Python 3.12, and Node 20+ for the website. Everything runs on CPU.
+
+**Run the app** (needs the model files from the training steps below in `data/models/`):
+
+```powershell
+cd backend
+uv run uvicorn app.main:app --port 8000          # API docs at http://127.0.0.1:8000/docs
+# in a second terminal:
+cd frontend
+npm install
+npm run dev                                      # website at http://localhost:3000
+```
+
+Set `DEHQAN_LOAD_MODELS=0` to start the API without models (`/diagnose` then answers 503; `/spray-window` still works).
+
+**Reproduce the evaluations:**
 
 ```powershell
 cd backend
