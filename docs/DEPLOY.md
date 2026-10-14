@@ -19,13 +19,11 @@ The trained weights inherit their data's licenses:
 Publishing them for a portfolio demo is fine. **Selling the product would need retrained models on data you may
 use commercially.** Say so in the model repo's description.
 
-## 1. Put the weights on the Hugging Face Hub (web UI, no tokens)
+## 1. Put the weights on the Hugging Face Hub (DONE: `MoZainUlAbideen/Dehqan`)
 
-1. Sign in at huggingface.co, then **New → Model**. Name it `dehqan-models`. Public is simplest.
-2. **Files → Add file → Upload files** and upload these two from `data/models/` (6 MB and 13 MB):
-   - `field_tuned.pt`
-   - `severity.pt`
-3. In the repo's README, note the non-commercial limit above.
+Already done: the model repo `MoZainUlAbideen/Dehqan` holds both files, and the startup download was tested against it
+(both files fetched anonymously in about 12 s and are byte-identical to `data/models/`). For a new repo: **New → Model**, public.
+Still to do: add a model card (the repo's README.md) saying the weights are **non-commercial** (see section 0) and that this is a research prototype. The repo currently has no license note.
 
 ## 2. Create and push the Space
 
@@ -46,7 +44,7 @@ powershell -File deploy/make_space.ps1          # creates build/space/
    git push
    ```
 3. In the Space → **Settings → Variables and secrets**, add:
-   - `DEHQAN_MODEL_REPO` = `<your-username>/dehqan-models`
+   - `DEHQAN_MODEL_REPO` = `MoZainUlAbideen/Dehqan`
    - `DEHQAN_CORS_ORIGINS` = your Vercel URL (add it after step 3; until then `http://localhost:3000`)
 4. Watch the build log. The first start also downloads CLIP (~600 MB) and the two weight files, so give it a few
    minutes. Then open `https://<your-username>-dehqan-api.hf.space/health`. You want `"models_loaded": true`.

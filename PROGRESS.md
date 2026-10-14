@@ -33,7 +33,8 @@ _Last updated: 2026-10-14_
   - [x] Next.js website: home, diagnose, spray window (map + hour grid), accuracy page from real eval JSON; lint + typecheck + build clean; checked in headless Edge (dark mode only)
   - [x] Deploy target chosen: Hugging Face Spaces (Docker) + Vercel. Render free (512 MB) cannot hold torch + CLIP (CLIP file alone is 605 MB)
   - [x] Prepared: GitHub Actions CI (backend tests w/o torch, frontend lint+types+build), Dockerfile (untested build), model fetch from HF Hub at startup (4 tests), CPU-only torch for Linux, deploy/make_space.ps1, docs/DEPLOY.md
-  - [ ] USER: upload weights to HF Hub, create Space, push, deploy frontend on Vercel (docs/DEPLOY.md)
+  - [x] USER: weights uploaded to HF Hub (MoZainUlAbideen/Dehqan); startup download verified against it (identical files)
+  - [ ] Create the HF Space + push (needs `uv run hf auth login` once), then deploy frontend on Vercel (docs/DEPLOY.md)
   - [ ] Verify the first real Space build and fix what breaks
   - [ ] WhatsApp sandbox
 - [ ] **M7 — LLMOps**
