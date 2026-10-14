@@ -1,10 +1,9 @@
-"""Download model weights from a Hugging Face Hub *model repo* if they are not on disk yet.
+"""Download model files from a Hugging Face Hub *model repo* if they are not on disk yet.
 
-Used at server start on hosts where data/models/ does not exist (Docker, Hugging Face Spaces):
-    DEHQAN_MODEL_REPO=<your-username>/dehqan-models
+Used at image build time and at server start on hosts without a data/models/ folder (e.g. Render):
+    DEHQAN_MODEL_REPO=<your-username>/<model-repo>
 
-The repo must contain the files listed in MODEL_FILES at its top level. CLIP is not copied: it is loaded
-straight from the public openai/clip-vit-base-patch32 repo when no local copy exists.
+The repo must contain the ONNX files below inside an `onnx/` folder (produce them with vision.export_onnx).
 """
 
 from pathlib import Path
@@ -13,7 +12,13 @@ from typing import Callable
 from vision.download_data import DATA_DIR
 
 MODELS_DIR = DATA_DIR / "models"
-MODEL_FILES = ["field_tuned.pt", "severity.pt"]
+ONNX_FILES = [
+    "onnx/classifier.onnx",
+    "onnx/severity.onnx",
+    "onnx/clip_vision_int8.onnx",
+    "onnx/clip_text.npy",
+    "onnx/meta.json",
+]
 
 Downloader = Callable[[str, str, Path], None]
 
@@ -24,15 +29,20 @@ def _hub_download(repo_id: str, filename: str, dest_dir: Path) -> None:
     hf_hub_download(repo_id=repo_id, filename=filename, local_dir=dest_dir)
 
 
-def ensure_models(repo_id: str, models_dir: Path = MODELS_DIR, download: Downloader = _hub_download) -> list[str]:
-    """Download each missing file in MODEL_FILES. Returns the names that were downloaded.
+def ensure_models(
+    repo_id: str,
+    models_dir: Path = MODELS_DIR,
+    download: Downloader = _hub_download,
+    files: list[str] = ONNX_FILES,
+) -> list[str]:
+    """Download each missing file. Returns the names that were downloaded.
 
     Raises FileNotFoundError if a download did not produce the file, so a bad repo fails loudly at startup
     instead of serving a half-working API.
     """
     models_dir.mkdir(parents=True, exist_ok=True)
     fetched: list[str] = []
-    for name in MODEL_FILES:
+    for name in files:
         if (models_dir / name).exists():
             continue
         download(repo_id, name, models_dir)

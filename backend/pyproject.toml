@@ -3,16 +3,15 @@ name = "dehqan-backend"
 version = "0.1.0"
 description = "Voice-first crop doctor and market advisor for Pakistani farmers"
 requires-python = ">=3.12"
+# Runtime dependencies: all the deployed server needs. No PyTorch (see the "train" group).
 dependencies = [
-    "datasets>=5.1.0",
     "fastapi>=0.143.0",
     "httpx>=0.28.1",
     "huggingface-hub>=2.2.0",
+    "numpy>=2.0",
+    "onnxruntime>=1.31.0",
     "pillow>=12.3.0",
     "python-multipart>=0.0.32",
-    "torch>=2.14.1",
-    "torchvision>=0.29.1",
-    "transformers>=5.19.0",
     "uvicorn>=0.54.0",
 ]
 
@@ -24,6 +23,18 @@ pythonpath = ["."]
 dev = [
     "pytest>=9.1.1",
 ]
+# Training, evaluation and ONNX export. Not installed in the deployed image.
+train = [
+    "datasets>=5.1.0",
+    "onnx>=1.23.2",
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
+    "transformers>=5.19.0",
+]
+
+[tool.uv]
+# Plain `uv sync` keeps installing everything for development; the Dockerfile passes --no-group train.
+default-groups = ["dev", "train"]
 
 # Linux (Docker / Hugging Face Spaces / CI): use the CPU-only PyTorch wheels. The default Linux wheel drags in
 # several GB of CUDA libraries we cannot use. Windows keeps PyPI's wheels, which are already CPU-only.

@@ -56,7 +56,7 @@ flowchart TD
 | Market agent | Mandi price history, forecast, sell/hold with confidence band | Time-series model |
 | Voice reply | Spoken answer in the farmer's language | MMS-TTS |
 
-**Planned stack:** Python 3.12 · FastAPI · `uv` · pytest · Docker → Render · Next.js + TypeScript + Tailwind → Vercel · Langfuse tracing · GitHub Actions eval gate.
+**Planned stack:** Python 3.12 · FastAPI (ONNX Runtime at inference) · `uv` · pytest · Docker → Render · Next.js + TypeScript + Tailwind → Vercel · Langfuse tracing · GitHub Actions eval gate.
 
 ### Repo layout
 
@@ -240,6 +240,28 @@ Outcomes: `approved`, `no_dose` (registered, but no dose to give, so the farmer 
 
 **Blocked on data:** the registered and banned lists are *inputs*, and we do not yet have them. Searches point to the Punjab Agriculture Department's crop-wise agrochemical list (with WHO hazard class and antidotes) and the federal Department of Plant Protection, but from our machine those sites did not resolve, and we will not invent a pesticide list. The official wheat-rust advisories we found also appear to tell farmers to follow local expert advice and, as far as we could see, give no dose. If that holds, the honest product behaviour for wheat rust is often `no_dose` plus a referral, not a made-up number.
 
+### Running on a 512 MB host: the ONNX backend
+
+Render's free tier has 512 MB of RAM. The PyTorch version of the pipeline needs about **909 MB** (PyTorch alone is 292 MB, and the first request pushes it far higher), so it cannot run there. The server therefore runs on **ONNX Runtime**, with no PyTorch installed:
+
+| | PyTorch (development) | ONNX Runtime (deployed) |
+|---|---|---|
+| RAM, all 3 models loaded and running | ~909 MB | **~213-220 MB** (measured on the real server after repeated requests) |
+| Time per photo, dev PC full CPU | about 1 s | about 0.2 s |
+| Needs PyTorch installed | yes | no (a test enforces this) |
+
+How: `vision/export_onnx.py` exports the classifier and segmenter, exports only CLIP's *image* half, computes CLIP's text embeddings once instead of on every request, and quantises CLIP's image half to int8 (351 MB to 88 MB). `vision/check_onnx_parity.py` then compares the ONNX models with the PyTorch ones on the same 500 leaf and 500 non-crop photos used for the gate evaluation (`evals/onnx_parity.json`):
+
+| Model | Agreement with PyTorch |
+|---|---|
+| Disease classifier | same top label on **100%** of 500 photos; confidence differs by at most 0.00001 |
+| Severity | same grade on **100%** of 500; severity differs by at most 0.001 percentage points |
+| "Not a crop" gate (int8 CLIP) | same decision on **NaN%** of 1000 photos (1 photo differs; one score moved by up to 0.3573) |
+
+Gate accuracy on ONNX: accepts **99.8%** of leaf photos and wrongly accepts **1.0%** of non-crop photos (AUROC 0.9992), against 99.6% / 1.0% (AUROC 0.9997) on PyTorch. The 0.2-point difference in accepted leaves is one photo, i.e. noise; the slightly lower AUROC is the cost of quantisation. All model evaluations above (accuracy, abstention, severity) were measured with PyTorch; the parity table is the evidence that the deployed models behave the same.
+
+**Not yet measured:** speed on Render's free CPU (a small slice of one core, so expect several seconds per photo), and the Docker build itself.
+
 ### "Not a crop" gate (zero-shot CLIP)
 
 `vision/crop_gate.py` uses CLIP with no training: it scores a photo against text prompts for leaves ("a close-up photo of a healthy plant leaf", ...) and for other things ("a photo of a person", "a vehicle", ...), and rejects the photo if the leaf prompts hold less than half the probability. Dehqan then asks for a clearer leaf photo instead of diagnosing a dog. `vision/eval_crop_gate.py` tests it on 500 leaf photos (100 each from PlantVillage, PlantDoc, both cotton sets and corn) and 500 non-crop photos (Caltech-101), and compares it with a tempting shortcut: rejecting photos where the disease classifier's own confidence is low. Results: `evals/crop_gate.json`.
@@ -271,7 +293,7 @@ These apply to every model in this repo:
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent done (spray windows); satellite, market and the supervisor router not started.*
-- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API, rate limiting, website, CI workflow, Dockerfile and a step-by-step deploy guide ([docs/DEPLOY.md](docs/DEPLOY.md)) are done; the deploy itself needs your Hugging Face and Vercel accounts and has not been done. The Docker image was not built locally.*
+- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API, rate limiting, website, CI workflow, a PyTorch-free ONNX backend, Dockerfile and a step-by-step guide ([docs/DEPLOY.md](docs/DEPLOY.md)) are done. The deploy itself (Render + Vercel) has not been done, and the Docker image was never built locally.*
 - [ ] **M7 LLMOps:** Langfuse, CI eval gate, drift monitoring, nightly refresh
 
 Fallback scope if time is tight: 2 crops (wheat, cotton), 2 languages (Urdu, Pashto), 1 mandi region.
@@ -291,7 +313,7 @@ npm install
 npm run dev                                      # website at http://localhost:3000
 ```
 
-Set `DEHQAN_LOAD_MODELS=0` to start the API without models (`/diagnose` then answers 503; `/spray-window` still works).
+The API uses the ONNX models when `data/models/onnx/` exists (`DEHQAN_BACKEND=torch` forces PyTorch). Set `DEHQAN_LOAD_MODELS=0` to start the API without models (`/diagnose` then answers 503; `/spray-window` still works).
 
 **Reproduce the evaluations:**
 
@@ -309,6 +331,8 @@ uv run python -m vision.download_pdsnet         # 11 MB: field photos with lesio
 uv run python -m vision.train_severity          # ~22 min on CPU; writes ../evals/severity.json
 uv run python -m vision.download_negatives      # Caltech-101 non-crop photos, for the "not a crop" gate
 uv run python -m vision.download_clip           # CLIP model files (~600 MB)
+uv run python -m vision.export_onnx             # exports the deployed ONNX models to data/models/onnx/
+uv run python -m vision.check_onnx_parity       # ONNX vs PyTorch on 1,000 photos; writes ../evals/onnx_parity.json
 ```
 
 Datasets and model weights are gitignored. Only the download scripts and eval results are committed.

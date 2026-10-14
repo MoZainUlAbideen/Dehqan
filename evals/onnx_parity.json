@@ -1,0 +1,29 @@
+{
+  "n_leaf": 500,
+  "n_non_crop": 500,
+  "gate": {
+    "mean_abs_score_diff": 0.0068,
+    "max_abs_score_diff": 0.3573,
+    "decision_agreement_at_0.5": 0.999,
+    "onnx_int8": {
+      "true_positive_rate": 0.998,
+      "false_positive_rate": 0.01,
+      "auroc": 0.9992
+    },
+    "torch": {
+      "true_positive_rate": 0.996,
+      "false_positive_rate": 0.01,
+      "auroc": 0.9997
+    }
+  },
+  "classifier": {
+    "top1_label_agreement": 1.0,
+    "max_abs_confidence_diff": 1e-05
+  },
+  "severity": {
+    "n_compared": 500,
+    "mean_abs_diff_points": 0.0,
+    "max_abs_diff_points": 0.001,
+    "grade_agreement": 1.0
+  }
+}

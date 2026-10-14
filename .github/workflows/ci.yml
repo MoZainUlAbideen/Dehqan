@@ -21,8 +21,8 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: backend/uv.lock
-      # The tests use fakes for the models, so PyTorch is not needed (and is ~GBs on Linux).
-      - run: uv sync --frozen --no-install-package torch --no-install-package torchvision
+      # Runtime + dev dependencies only: PyTorch lives in the "train" group, which the tests do not need.
+      - run: uv sync --frozen --no-group train
       # Includes the safety guardrail tests (tests/test_guardrail.py): any failure blocks the merge.
       - run: uv run --no-sync pytest -q
 

@@ -32,9 +32,10 @@ _Last updated: 2026-10-14_
   - [x] FastAPI backend: /diagnose (gate -> classifier -> abstention -> severity), /spray-window, /health, /about; upload validation, downscaling, per-IP rate limit, CORS; 72 tests; run live with real models
   - [x] Next.js website: home, diagnose, spray window (map + hour grid), accuracy page from real eval JSON; lint + typecheck + build clean; checked in headless Edge (dark mode only)
   - [x] Deploy target chosen: Hugging Face Spaces (Docker) + Vercel. Render free (512 MB) cannot hold torch + CLIP (CLIP file alone is 605 MB)
-  - [x] Prepared: GitHub Actions CI (backend tests w/o torch, frontend lint+types+build), Dockerfile (untested build), model fetch from HF Hub at startup (4 tests), CPU-only torch for Linux, deploy/make_space.ps1, docs/DEPLOY.md
+  - [x] Prepared: GitHub Actions CI (runtime-only install, no PyTorch), backend/Dockerfile (bakes model files in; untested build), render.yaml (untested), model fetch from HF Hub (4 tests), docs/DEPLOY.md for Render + Vercel
   - [x] USER: weights uploaded to HF Hub (MoZainUlAbideen/Dehqan); startup download verified against it (identical files)
-  - [ ] Create the HF Space + push (needs `uv run hf auth login` once), then deploy frontend on Vercel (docs/DEPLOY.md)
+  - [ ] USER: upload data/models/onnx/ (5 files, NOT clip_vision.onnx) to the HF model repo, create the Render web service (Docker, root dir backend, free), deploy frontend on Vercel (docs/DEPLOY.md)
+  - [ ] Measure latency on Render's free CPU; verify the first real Render build
   - [ ] Verify the first real Space build and fix what breaks
   - [ ] WhatsApp sandbox
 - [ ] **M7 — LLMOps**

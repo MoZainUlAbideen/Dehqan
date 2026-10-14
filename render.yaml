@@ -1,0 +1,13 @@
+# Render Blueprint for the Dehqan API (free plan). Alternative to creating the service by hand in the dashboard.
+# Not tested: Render has not been used with this repo yet.
+services:
+  - type: web
+    name: dehqan-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: DEHQAN_CORS_ORIGINS
+        value: "*"
