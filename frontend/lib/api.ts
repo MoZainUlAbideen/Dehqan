@@ -163,3 +163,29 @@ export async function fieldNdvi(lat: number, lon: number, size_m = 300): Promise
     }),
   );
 }
+
+// ---------- ask: the supervisor router ----------
+export type AskResult = {
+  language: "en" | "ur";
+  route: string;
+  routes: string[];
+  intents: { name: string; score: number; matched: string[] }[];
+  understood: { city: string | null; commodity: string | null; has_coordinates: boolean };
+  needs: "photo" | "location" | "coordinates" | "commodity" | "crop_choice" | null;
+  answer: string;
+  answer_en: string;
+  answer_ur: string;
+  results: Record<string, unknown>;
+  limitations: string[];
+};
+
+export async function ask(text: string, lat?: number, lon?: number): Promise<AskResult> {
+  return parse(
+    await request(`${API_URL}/ask`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text, ...(lat !== undefined && lon !== undefined ? { lat, lon } : {}) }),
+      signal: AbortSignal.timeout(150_000),
+    }),
+  );
+}

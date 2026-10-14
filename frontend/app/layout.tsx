@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 const NAV = [
+  { href: "/ask", label: "Ask Dehqan" },
   { href: "/diagnose", label: "Diagnose a leaf" },
   { href: "/spray", label: "Spray window" },
   { href: "/field", label: "Field from space" },

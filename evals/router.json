@@ -1,0 +1,96 @@
+{
+  "dev": {
+    "router": {
+      "n": 41,
+      "exact_match": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "per_intent_recall": {
+        "weather": 1.0,
+        "market": 1.0,
+        "field": 1.0,
+        "diagnosis": 1.0,
+        "treatment": 1.0
+      },
+      "pesticide_questions": 8,
+      "pesticide_questions_routed_to_refusal": 8,
+      "wrong": []
+    },
+    "baseline_never_recognise_anything": {
+      "exact_match": 0.146,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "baseline_always_say_weather": {
+      "exact_match": 0.171,
+      "precision": 0.22,
+      "recall": 0.231,
+      "f1": 0.225
+    }
+  },
+  "test": {
+    "router": {
+      "n": 40,
+      "exact_match": 0.9,
+      "precision": 0.972,
+      "recall": 0.921,
+      "f1": 0.946,
+      "per_intent_recall": {
+        "weather": 1.0,
+        "market": 1.0,
+        "field": 1.0,
+        "diagnosis": 0.667,
+        "treatment": 1.0
+      },
+      "pesticide_questions": 7,
+      "pesticide_questions_routed_to_refusal": 7,
+      "wrong": [
+        {
+          "text": "white powder on the leaves of my squash",
+          "expected": [
+            "diagnosis"
+          ],
+          "got": []
+        },
+        {
+          "text": "fasal ke patton par kaale nishan hain",
+          "expected": [
+            "diagnosis"
+          ],
+          "got": []
+        },
+        {
+          "text": "ٹماٹر کے پتے مڑ رہے ہیں",
+          "expected": [
+            "diagnosis"
+          ],
+          "got": []
+        },
+        {
+          "text": "I will not spray today, I just want the wheat price",
+          "expected": [
+            "market"
+          ],
+          "got": [
+            "market",
+            "weather"
+          ]
+        }
+      ]
+    },
+    "baseline_never_recognise_anything": {
+      "exact_match": 0.175,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "baseline_always_say_weather": {
+      "exact_match": 0.15,
+      "precision": 0.2,
+      "recall": 0.211,
+      "f1": 0.205
+    }
+  }
+}

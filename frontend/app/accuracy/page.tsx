@@ -4,6 +4,7 @@ import corn from "@/data/evals/corn_field.json";
 import gate from "@/data/evals/crop_gate.json";
 import fieldTuned from "@/data/evals/field_tuned.json";
 import market from "@/data/evals/market_forecast.json";
+import router from "@/data/evals/router.json";
 import baseline from "@/data/evals/baseline_lab_vs_field.json";
 import severity from "@/data/evals/severity.json";
 
@@ -201,11 +202,38 @@ export default function AccuracyPage() {
         </p>
       </section>
 
+      <section className="mt-12">
+        <h2 className="font-display text-2xl font-semibold">7. Does it understand your question?</h2>
+        <p className="mt-2 max-w-3xl text-ink-2">
+          &quot;Ask Dehqan&quot; reads a question in English, Roman Urdu or Urdu and passes it to the right tool. We wrote {router.test.router.n} test questions
+          (including ones it should not understand) and ran them once, at the end, after fixing mistakes on a separate set.
+        </p>
+        <div className="mt-5">
+          <BarChart
+            title="Questions understood completely right (frozen test set)"
+            caption={`${router.test.router.n} questions in English, Roman Urdu and Urdu script.`}
+            rows={[
+              { label: "Never recognise anything", value: router.test.baseline_never_recognise_anything.exact_match * 100 },
+              { label: "Always answer with the most common topic", value: router.test.baseline_always_say_weather.exact_match * 100 },
+              { label: "Dehqan's router", value: router.test.router.exact_match * 100, emphasis: true },
+            ]}
+            decimals={0}
+          />
+        </div>
+        <p className="mt-3 max-w-3xl text-sm text-ink-2">
+          <strong>Every question asking which pesticide or what dose was refused</strong> ({router.test.router.pesticide_questions_routed_to_refusal} of {router.test.router.pesticide_questions}; the
+          automated checks require 100%). It missed {router.test.router.wrong.length} questions: three describing symptoms without naming a disease
+          (it then says what it can help with instead of guessing) and one where &quot;I will not spray&quot; was read as a spray question.
+          The questions were written by us, so real wording will be harder: treat this as an upper bound.
+        </p>
+      </section>
+
       <section className="mt-12 rounded-2xl border border-gold/50 bg-gold-soft p-6">
         <h2 className="font-display text-2xl font-semibold">What is not solved yet</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-ink-2">
           <li>No wheat or cotton disease classifier that works on new cameras. Pakistani field photos are still needed.</li>
           <li>None of our field data comes from Pakistan (nearest public sources: China, Bangladesh).</li>
+          <li>The question reader is keyword-based and was tested on questions we wrote; real farmers will word things differently.</li>
           <li>No pesticide advice. Dose and safety must come from official Pakistani documents we do not have loaded yet, and the app never invents them.</li>
           <li>The satellite field check shows greenness (NDVI), a physical measurement, but its &quot;even or patchy&quot; reading uses thresholds we chose and has not been checked against ground truth.</li>
           <li>Price forecasts do not beat the simple &quot;prices stay the same&quot; guess, so market advice is mostly &quot;no clear signal&quot;. Voice notes and satellite field checks are not built yet.</li>

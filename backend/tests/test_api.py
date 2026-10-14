@@ -173,3 +173,51 @@ def test_field_ndvi_is_rate_limited(monkeypatch):
     c = client(field_fn=lambda lat, lon, size_m: FAKE_REPORT)
     codes = [c.post("/field-ndvi", json={"lat": 34.0, "lon": 71.5}).status_code for _ in range(3)]
     assert codes == [200, 200, 429]
+
+
+# ---------- the /ask supervisor router ----------
+def test_ask_routes_a_price_question_to_the_market_agent_with_real_data():
+    r = client().post("/ask", json={"text": "wheat price in Lahore"})
+    assert r.status_code == 200
+    b = r.json()
+    assert b["route"] == "market" and b["understood"]["commodity"] == "Wheat" and b["results"]["market"]["market"] == "Lahore"
+    assert "retail prices" in b["answer_en"] and b["answer_ur"]
+
+
+def test_ask_routes_a_spray_question_through_the_injected_forecast():
+    c = client(forecast_fn=lambda lat, lon: HOURS)
+    b = c.post("/ask", json={"text": "kal spray kab karun, Peshawar mein"}).json()
+    assert b["route"] == "weather" and b["results"]["weather"]["windows"] and "Peshawar" in b["answer_en"]
+
+
+def test_ask_refuses_pesticide_questions_and_never_calls_a_data_service():
+    def boom(*a, **k):
+        raise AssertionError("no data service may run for a pesticide question")
+
+    c = client(forecast_fn=boom, field_fn=boom)
+    b = c.post("/ask", json={"text": "which pesticide and what dose for rust?"}).json()
+    assert b["route"] == "treatment" and b["results"]["treatment"] == {"refused": True}
+    assert "extension office" in b["answer_en"]
+
+
+def test_ask_answers_in_the_language_asked_and_says_what_is_missing():
+    b = client().post("/ask", json={"text": "کیا آج سپرے کرنا ٹھیک ہے"}).json()
+    assert b["language"] == "ur" and b["needs"] == "location" and b["answer"] == b["answer_ur"]
+
+
+def test_ask_validates_input_and_needs_both_coordinates_or_none():
+    c = client()
+    assert c.post("/ask", json={"text": ""}).status_code == 422
+    assert c.post("/ask", json={"text": "x" * 501}).status_code == 422
+    assert c.post("/ask", json={"text": "weather", "lat": 31.5}).status_code == 422
+    assert c.post("/ask", json={"text": "weather", "lat": 51.5, "lon": -0.1}).status_code == 422
+
+
+def test_ask_502_when_a_data_service_fails_and_is_rate_limited(monkeypatch):
+    def boom(lat, lon):
+        raise httpx.ConnectError("down")
+
+    assert client(forecast_fn=boom).post("/ask", json={"text": "spray weather in Lahore"}).status_code == 502
+    monkeypatch.setenv("DEHQAN_ASK_PER_MIN", "2")
+    c = client()
+    assert [c.post("/ask", json={"text": "hello"}).status_code for _ in range(3)] == [200, 200, 429]

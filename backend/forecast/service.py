@@ -19,7 +19,7 @@ def _series():
 @lru_cache(maxsize=1)
 def _summary() -> dict | None:
     try:
-        return json.loads(SUMMARY_FILE.read_text())
+        return json.loads(SUMMARY_FILE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
 

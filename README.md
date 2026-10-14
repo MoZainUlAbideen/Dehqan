@@ -54,6 +54,7 @@ flowchart TD
 | Agronomy RAG agent | Cited treatment from advisories + registered-pesticide list | Embeddings + Chroma |
 | `GET /market`, `GET /market/options` | Monthly retail prices (WFP, 5 cities, 8 staples) with a 3-month forecast, a range from past forecast errors, and a sell/hold signal that only appears when the whole range points one way. Mostly says "no clear signal", honestly | `backend/forecast/` |
 | `POST /field-ndvi` | Real Sentinel-2 satellite pictures of a pin (no account needed): greenness (NDVI) on each clear day for a year, a picture of the patch, whether it looks even or patchy, and a rough comparison with last year. Shows *what*, never *why* | `backend/data_sources/sentinel.py` |
+| `POST /ask` | The supervisor router: reads a question in English, Roman Urdu or Urdu script, decides which specialist(s) should answer (weather, market, satellite field check, diagnosis), runs them, and replies in English and Urdu. A pesticide or dose question is always refused, and no data service is called | `backend/router/` |
 | Safety guardrail | Blocks unregistered/banned chemicals; dose and PPE only from sources | Rules + red-team eval |
 | Field agent | Sentinel-2 NDVI history for the farmer's plot | Copernicus |
 | Weather agent | Spray window from forecast | Open-Meteo |
@@ -244,6 +245,25 @@ Outcomes: `approved`, `no_dose` (registered, but no dose to give, so the farmer 
 
 **Blocked on data:** the registered and banned lists are *inputs*, and we do not yet have them. Searches point to the Punjab Agriculture Department's crop-wise agrochemical list (with WHO hazard class and antidotes) and the federal Department of Plant Protection, but from our machine those sites did not resolve, and we will not invent a pesticide list. The official wheat-rust advisories we found also appear to tell farmers to follow local expert advice and, as far as we could see, give no dose. If that holds, the honest product behaviour for wheat rust is often `no_dose` plus a referral, not a made-up number.
 
+### Supervisor router: `POST /ask`
+
+One text box in front of all the specialists. `router/` scores a question against a keyword lexicon (English, Roman Urdu and Urdu script, with weak words like "spray" or "leaf" that only count together with something else), finds the city and crop named in it, runs the matching agents (several if the question has several parts), and answers in English and Urdu. If it understands nothing it says what it *can* help with. If it needs something (a city, a crop, a photo, coordinates) it asks. There is **no language model**, so no API key and no cost, but unusual wording can be missed.
+
+**Safety by design.** Any question about which pesticide or what dose goes to a fixed refusal ("the official lists are not loaded, ask your extension office"). That route calls no data service and its text contains no numbers (tests check both), and the English negation handling deliberately cannot switch it off.
+
+**Evaluation** (`router/eval_router.py`, `evals/router.json`): two sets of natural-sounding questions I wrote (English, Roman Urdu, Urdu script, including out-of-scope and awkward ones). The **dev set** (41 questions) was used to find and fix mistakes; the **test set** (40) was run once at the end, so its numbers are not inflated by tuning.
+
+| | Questions fully right | Precision / recall |
+|---|---|---|
+| **Router, frozen test set** | **90%** | 97% / 92% |
+| Never recognise anything | 18% | n/a |
+| Always answer "weather" | 15% | 20% / 21% |
+
+- **Pesticide questions: 7 of 7 on the test set (and 8 of 8 on dev) went to the refusal.** The CI gate requires 100%.
+- **The dev set shows 100% only because it was tuned on**; the test number is the honest one. Before tuning, the dev set scored 90%, the same as the test set.
+- **The 4 test misses:** three symptom descriptions with no disease word ("white powder on the leaves", "black marks on the leaves", "tomato leaves curling") get the "here is what I can help with" answer, never a wrong diagnosis; and "I will not spray today, I just want the price" also triggers the weather agent (negation is only handled for sell/hold words, and not in Urdu, where the negative comes after the verb).
+- **Both sets are small and written by the person who wrote the router.** Real farmers will phrase things differently, so read these as an optimistic upper bound. The lexicon and all Urdu answer text need a native-speaker review.
+
 ### Satellite field check (NDVI)
 
 `POST /field-ndvi` reads Sentinel-2 L2A imagery from the open AWS archive (found through the Earth Search catalogue; free, no account). For each two-week period it takes the least-cloudy scene and reads **only a small window** (200 to 500 m) of the red and near-infrared bands, so a scene costs a few hundred KB, masks cloud, shadow and water with the scene classification layer, and computes NDVI = (NIR - red) / (NIR + red). The website (`/field`) shows the patch as a coloured grid, a year-long chart and a play button.
@@ -325,7 +345,7 @@ These apply to every model in this repo:
 - [x] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *Done, with caveats: field accuracy rose from 11.5% to 47.4% but is still not usable for advice; severity grade accuracy 81.5% vs 42% baseline (wheat weakest); "not a crop" gate accepts 99.6% of leaf photos and wrongly accepts 1% of everyday objects (hard cases like soil and weeds untested).*
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
-- [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent, market agent (honestly: it does not beat the naive baseline) and satellite field agent (NDVI, no accuracy number) done; supervisor router not started.*
+- [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent, market agent (honestly: it does not beat the naive baseline), satellite field agent (NDVI, no accuracy number) and the supervisor router (90% of frozen-test questions right; all pesticide questions refused) done.*
 - [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API deployed on Render (free) and verified live; website built and checked against it, Vercel deploy pending. CI workflow, PyTorch-free ONNX backend and a step-by-step guide ([docs/DEPLOY.md](docs/DEPLOY.md)) are done.*
 - [ ] **M7 LLMOps:** Langfuse, CI eval gate, drift monitoring, nightly refresh. *CI workflow and an eval gate over the committed results are done; Langfuse (needs an account), drift monitoring and the nightly refresh are not.*
 

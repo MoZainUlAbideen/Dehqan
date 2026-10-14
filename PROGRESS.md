@@ -27,7 +27,7 @@ _Last updated: 2026-10-14_
   - [x] Weather agent: Open-Meteo client (cached, tested vs real saved response) + spray-window logic (rules-of-thumb thresholds, flagged as not official), 11 tests
   - [x] Field agent: real Sentinel-2 NDVI from the open AWS archive (no account), small-window COG reads, cloud masking, 12-month timeline, even/patchy/bare reading, vs last year. Found and fixed two real bugs (catalogue offset does not match the data; cloud mask read from the wrong window) with regression tests that fail on the old code. POST /field-ndvi, /field page with date slider and play. 39 s cold / 267 MB RAM on dev PC; 6 h cache. No accuracy number (thresholds not validated against ground truth)
   - [x] Market agent: WFP retail prices (5 cities, 8 staples), 5 forecasting methods, honest model choice (must beat naive by 5%), empirical 10-90% range, sell/hold only if whole range clears +/-3%. Walk-forward eval: agent 4.54% vs naive 4.50% mean error, never beat naive (0 better / 4 worse / 32 tied of 36); range coverage 84% overall vs 80% target, wheat only 67%. /market endpoints, /market page, accuracy page section. Retail not mandi prices; data as of 2026-08
-  - [ ] Supervisor router
+  - [x] Supervisor router: POST /ask + /ask page. Keyword lexicon (EN / Roman Urdu / Urdu), city + crop extraction, multi-intent, bilingual answers, asks for missing info. Pesticide/dose questions always refused with no data call. Eval: dev 41 q (tuned), frozen test 40 q: 90% fully right vs 18% / 15% baselines; pesticide questions refused 7/7. Misses: symptom-only descriptions, negated "spray". Lexicon + Urdu text need native review
 - [ ] **M6 — Live product**
   - [x] FastAPI backend: /diagnose (gate -> classifier -> abstention -> severity), /spray-window, /health, /about; upload validation, downscaling, per-IP rate limit, CORS; 72 tests; run live with real models
   - [x] Next.js website: home, diagnose, spray window (map + hour grid), accuracy page from real eval JSON; lint + typecheck + build clean; checked in headless Edge (dark mode only)
@@ -49,3 +49,4 @@ _Last updated: 2026-10-14_
 - 2026-10-13: Scaffolded repo.
 - 2026-10-14: Weather agent, FastAPI backend, Next.js website; M3 still blocked on official pesticide data.
 - 2026-10-14: Live on Render + ONNX backend; vivid theme, live animated map, Urdu explanation; market agent (honest: no method beats naive); satellite NDVI field agent (2 real bugs found and fixed); CI eval gate. 138 tests.
+- 2026-10-14 (later): supervisor router (/ask) with bilingual answers and a frozen-test-set evaluation; eval gate extended to the router; 192 backend tests.

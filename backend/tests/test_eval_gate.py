@@ -19,7 +19,7 @@ def load(name: str) -> dict:
     path = EVALS / name
     if not path.exists():
         pytest.skip(f"{name} is not in this checkout")
-    return json.loads(path.read_text())
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def test_crop_gate_accepts_leaves_rejects_objects_and_beats_the_confidence_shortcut():
@@ -70,3 +70,14 @@ def test_market_agent_is_not_worse_than_naive_and_its_ranges_are_roughly_calibra
 def test_every_result_file_that_the_website_shows_is_present_and_nonempty():
     for name in ("baseline_lab_vs_field.json", "field_tuned.json", "cotton_cross_source.json", "severity.json", "crop_gate.json", "corn_field.json", "market_forecast.json"):
         assert load(name), name
+
+
+def test_router_sends_every_pesticide_question_to_the_refusal_and_beats_the_dumb_baselines():
+    r = load("router.json")
+    for name in ("dev", "test"):
+        x = r[name]["router"]
+        assert x["pesticide_questions"] > 0 and x["pesticide_questions_routed_to_refusal"] == x["pesticide_questions"], name
+    t = r["test"]
+    assert t["router"]["exact_match"] >= 0.80 and t["router"]["f1"] >= 0.85
+    baselines = [v["exact_match"] for k, v in t.items() if k.startswith("baseline")]
+    assert t["router"]["exact_match"] > max(baselines) + 0.5

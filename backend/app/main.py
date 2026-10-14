@@ -20,7 +20,7 @@ import httpx
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, UnidentifiedImageError
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.pipeline import ABSTAIN_THRESHOLD, ABSTAIN_THRESHOLD_NOTE, diagnose
 from app.ratelimit import RateLimiter
@@ -29,6 +29,8 @@ from app.spray_window import find_windows
 from data_sources.open_meteo import Hour, fetch_forecast
 from app.field_service import field_report
 from forecast import service as market_service
+from router.core import Agents
+from router.core import ask as router_ask
 from vision.severity import grade
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
@@ -42,6 +44,18 @@ class FieldRequest(BaseModel):
     lat: float = Field(ge=LAT_RANGE[0], le=LAT_RANGE[1])
     lon: float = Field(ge=LON_RANGE[0], le=LON_RANGE[1])
     size_m: int = Field(default=300, ge=100, le=1000)
+
+
+class AskRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+    lat: float | None = Field(default=None, ge=LAT_RANGE[0], le=LAT_RANGE[1])
+    lon: float | None = Field(default=None, ge=LON_RANGE[0], le=LON_RANGE[1])
+
+    @model_validator(mode="after")
+    def both_or_neither(self):
+        if (self.lat is None) != (self.lon is None):
+            raise ValueError("send both lat and lon, or neither")
+        return self
 
 
 class SprayRequest(BaseModel):
@@ -75,6 +89,7 @@ def create_app(
         load_models = components is None and os.environ.get("DEHQAN_LOAD_MODELS", "1") != "0"
     limit = diagnose_per_min or int(os.environ.get("DEHQAN_DIAGNOSE_PER_MIN", "10"))
     limiter = RateLimiter(limit, 60.0)
+    ask_limiter = RateLimiter(int(os.environ.get("DEHQAN_ASK_PER_MIN", "20")), 60.0)
     field_limiter = RateLimiter(int(os.environ.get("DEHQAN_FIELD_PER_MIN", "4")), 60.0)  # satellite reads are heavy
 
     @asynccontextmanager
@@ -133,6 +148,24 @@ def create_app(
             "note": SPRAY_NOTE,
             "message": "No safe spray window in the next 5 days." if not windows else f"{len(windows)} safe spray window(s) found.",
         }
+
+    agents = Agents(
+        spray=lambda lat, lon: [asdict(w) for w in find_windows(forecast_fn(lat, lon))],
+        market_options=market_service.options,
+        market=market_service.analysis,
+        field=lambda lat, lon: field_fn(lat, lon, 300),
+    )
+
+    @app.post("/ask")
+    def ask(req: AskRequest, request: Request):
+        """Supervisor router: reads a question (English, Roman Urdu or Urdu) and sends it to the right specialist."""
+        client = request.client.host if request.client else "unknown"
+        if not ask_limiter.allow(client):
+            raise HTTPException(429, "too many questions; please wait a minute")
+        try:
+            return router_ask(req.text, agents, req.lat, req.lon)
+        except (httpx.HTTPError, OSError) as e:
+            raise HTTPException(502, "a data service is unavailable; try again later") from e
 
     @app.post("/field-ndvi")
     def field_ndvi(req: FieldRequest, request: Request):
