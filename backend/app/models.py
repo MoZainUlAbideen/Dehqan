@@ -22,7 +22,8 @@ from vision.train_severity import NORM as SEG_NORM
 from vision.train_severity import SIZE as SEG_SIZE
 
 MODELS_DIR = DATA_DIR / "models"
-REQUIRED_FILES = ["clip/pytorch_model.bin", "field_tuned.pt", "severity.pt"]
+# CLIP is not required here: with no local copy it is loaded from the public Hub repo (see vision/crop_gate.py).
+REQUIRED_FILES = ["field_tuned.pt", "severity.pt"]
 
 
 @dataclass

@@ -5,6 +5,7 @@ Docs UI:                      http://127.0.0.1:8000/docs
 
 Settings (environment variables):
   DEHQAN_LOAD_MODELS=0        start without loading models (/diagnose then answers 503)
+  DEHQAN_MODEL_REPO=user/repo download missing weights from this Hugging Face model repo at start
   DEHQAN_CORS_ORIGINS=a,b     allowed browser origins (default: http://localhost:3000)
   DEHQAN_DIAGNOSE_PER_MIN=10  rate limit per IP for /diagnose
 """
@@ -69,7 +70,12 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         if load_models:
+            from app.fetch_models import ensure_models
             from app.models import load_components
+
+            repo = os.environ.get("DEHQAN_MODEL_REPO")
+            if repo:
+                ensure_models(repo)
 
             app.state.components = load_components()
         yield

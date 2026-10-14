@@ -24,3 +24,14 @@ pythonpath = ["."]
 dev = [
     "pytest>=9.1.1",
 ]
+
+# Linux (Docker / Hugging Face Spaces / CI): use the CPU-only PyTorch wheels. The default Linux wheel drags in
+# several GB of CUDA libraries we cannot use. Windows keeps PyPI's wheels, which are already CPU-only.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

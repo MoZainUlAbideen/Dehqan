@@ -271,7 +271,7 @@ These apply to every model in this repo:
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent done (spray windows); satellite, market and the supervisor router not started.*
-- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API, rate limiting and website built and run locally; not deployed yet.*
+- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API, rate limiting, website, CI workflow, Dockerfile and a step-by-step deploy guide ([docs/DEPLOY.md](docs/DEPLOY.md)) are done; the deploy itself needs your Hugging Face and Vercel accounts and has not been done. The Docker image was not built locally.*
 - [ ] **M7 LLMOps:** Langfuse, CI eval gate, drift monitoring, nightly refresh
 
 Fallback scope if time is tight: 2 crops (wheat, cotton), 2 languages (Urdu, Pashto), 1 mandi region.
@@ -315,4 +315,4 @@ Datasets and model weights are gitignored. Only the download scripts and eval re
 
 ## Data licenses and credits
 
-PlantVillage and PlantDoc are public research datasets; the field crop sets are redistributed by the [AgML project](https://project-agml.github.io/) on the Hugging Face Hub under the licenses listed above. Check each dataset card before commercial use: one cotton set is CC-BY-NC.
+PlantVillage and PlantDoc are public research datasets; the field crop sets are redistributed by the [AgML project](https://project-agml.github.io/) on the Hugging Face Hub under the licenses listed above. Check each dataset card before commercial use: one cotton set and the PDSNet severity data are CC-BY-NC, so the **severity weights are non-commercial**; a commercial product would need models retrained on data you may use commercially.
