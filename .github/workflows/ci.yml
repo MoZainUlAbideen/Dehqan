@@ -26,6 +26,29 @@ jobs:
       # Includes the safety guardrail tests (tests/test_guardrail.py): any failure blocks the merge.
       - run: uv run --no-sync pytest -q
 
+  docker:
+    name: Docker image builds and the server starts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The unit tests cannot see a missing system library (a Render deploy once crashed on libexpat, which rasterio
+      # needs). So build the same image Render builds and actually start the server inside it.
+      - run: docker build -t dehqan-api backend
+      - name: Start the container and check it is healthy and has every route
+        run: |
+          docker run -d --name api -p 10000:10000 dehqan-api
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:10000/health | grep -q '"models_loaded":true'; then break; fi
+            if [ "$(docker inspect -f '{{.State.Running}}' api)" != "true" ]; then echo "container exited"; docker logs api; exit 1; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:10000/health | grep -q '"models_loaded":true' || { docker logs api; exit 1; }
+          routes=$(curl -fsS http://localhost:10000/openapi.json)
+          for r in /diagnose /spray-window /market /field-ndvi /ask /status; do
+            echo "$routes" | grep -q "\"$r\"" || { echo "route $r is missing"; exit 1; }
+          done
+          echo "container healthy, all routes present"
+
   frontend:
     name: Frontend lint, types, build
     runs-on: ubuntu-latest

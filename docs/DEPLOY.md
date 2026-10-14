@@ -94,3 +94,11 @@ with its HTTP status or error (for example a 429 rate limit from the weather ser
 a host's IP address). The service log also records each failed attempt with its reason, and weather calls retry twice first.
 
 **Quick health checklist:** `/health` (models loaded?), `/status` (outside services reachable?), `/openapi.json` (which routes exist).
+
+**The deploy log ends with `ImportError: ... cannot open shared object file`.** A Python package needs a system library that the
+slim Docker image does not have (this happened with `libexpat.so.1`, needed by rasterio). Add it to the `apt-get install` line at the
+top of `backend/Dockerfile`. To find every library a package needs, list the dynamic-library requirements of its Linux wheel.
+
+**Do not build the Docker image on a small PC.** Docker Desktop's VM takes about half of an 8 GB machine's RAM, and Windows then swaps
+heavily. The `docker` job in `.github/workflows/ci.yml` builds the same image on every push and starts the server in it, which is the
+check that would have caught the `libexpat` crash before Render did.

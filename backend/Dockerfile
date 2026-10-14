@@ -1,9 +1,15 @@
 # Dehqan API for Render (free web service). Build context = backend/.
 #
 # Runs on ONNX Runtime, not PyTorch: ~220 MB of RAM with all three models loaded, versus ~909 MB with PyTorch.
-# Render's free tier allows 512 MB. NOT built locally (the Docker engine was not running on the dev PC), so the
-# first Render build is the first real test of this file: read its build log.
+# Render's free tier allows 512 MB. The CI workflow builds this image and starts the server on every push, because
+# a first Render deploy once crashed on a missing system library (libexpat, needed by rasterio) that no unit test sees.
 FROM python:3.12-slim
+
+# System libraries that the Python wheels need but do not bundle. Found by reading the dynamic-library requirements of
+# the rasterio, onnxruntime, Pillow and NumPy Linux wheels: only libexpat was missing (zlib is already in the base image).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libexpat1 zlib1g \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /usr/local/bin/uv
 
