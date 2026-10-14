@@ -52,6 +52,8 @@ flowchart TD
 | Intake agent | Speech-to-text, language detection, route the request | Whisper / MMS |
 | Diagnosis agent | Disease classifier, lesion-area severity, "not a crop / not sure" gate | PyTorch, HF Transformers |
 | Agronomy RAG agent | Cited treatment from advisories + registered-pesticide list | Embeddings + Chroma |
+| `GET /market`, `GET /market/options` | Monthly retail prices (WFP, 5 cities, 8 staples) with a 3-month forecast, a range from past forecast errors, and a sell/hold signal that only appears when the whole range points one way. Mostly says "no clear signal", honestly | `backend/forecast/` |
+| `POST /field-ndvi` | Real Sentinel-2 satellite pictures of a pin (no account needed): greenness (NDVI) on each clear day for a year, a picture of the patch, whether it looks even or patchy, and a rough comparison with last year. Shows *what*, never *why* | `backend/data_sources/sentinel.py` |
 | Safety guardrail | Blocks unregistered/banned chemicals; dose and PPE only from sources | Rules + red-team eval |
 | Field agent | Sentinel-2 NDVI history for the farmer's plot | Copernicus |
 | Weather agent | Spray window from forecast | Open-Meteo |
@@ -242,6 +244,34 @@ Outcomes: `approved`, `no_dose` (registered, but no dose to give, so the farmer 
 
 **Blocked on data:** the registered and banned lists are *inputs*, and we do not yet have them. Searches point to the Punjab Agriculture Department's crop-wise agrochemical list (with WHO hazard class and antidotes) and the federal Department of Plant Protection, but from our machine those sites did not resolve, and we will not invent a pesticide list. The official wheat-rust advisories we found also appear to tell farmers to follow local expert advice and, as far as we could see, give no dose. If that holds, the honest product behaviour for wheat rust is often `no_dose` plus a referral, not a made-up number.
 
+### Satellite field check (NDVI)
+
+`POST /field-ndvi` reads Sentinel-2 L2A imagery from the open AWS archive (found through the Earth Search catalogue; free, no account). For each two-week period it takes the least-cloudy scene and reads **only a small window** (200 to 500 m) of the red and near-infrared bands, so a scene costs a few hundred KB, masks cloud, shadow and water with the scene classification layer, and computes NDVI = (NIR - red) / (NIR + red). The website (`/field`) shows the patch as a coloured grid, a year-long chart and a play button.
+
+**What it says, and what it does not.** "Even" means greenness is similar across the patch; "patchy" means a part of it is clearly less green; "bare" means little crop to judge. It never names a cause. The even/patchy thresholds are our own choices and **have not been checked against ground truth**, so this feature has no accuracy number, only physical sanity checks. A 300 m square around a pin can also include roads, trees and neighbouring fields at different growth stages.
+
+**Two real bugs found while checking the output** (both now covered by tests that fail on the old behaviour):
+1. **Wrong reflectance offset.** The catalogue says to subtract 0.1 from reflectance for recent scenes, but the red band in these files reads far below the 1000 that offset would imply, and applying it gave NDVI above 1. Scanning March scenes over the same wheat area for 2019 to 2026 (processing versions 02.11 to 05.12), ignoring the offset gives a stable NDVI of 0.66 to 0.79 every year. The code uses the scale only, and says why.
+2. **Cloud mask read from the wrong place.** The mask window was computed from the window's own transform instead of the raster's, so for many pins the mask was all "no data" (and for others quietly misaligned). A synthetic-satellite-file test now puts a cloud block at a known spot and checks that exactly those pixels are masked.
+
+**Plausibility check on real data.** Farmland near Jhang (Punjab) shows the expected calendar: greening through the winter wheat season, a peak around February to March, bare ground after the April harvest, then summer crops from July. Wheat fields near Charsadda read a median NDVI of about 0.75 in March.
+
+**Cost.** A first check of a place reads about two dozen scenes: 39 s on the dev PC (RAM 267 MB afterwards); repeat checks come from a 6-hour cache in 44 ms. The endpoint stops waiting after 45 s and returns what it has (it says how many pictures were missing), so a slow host answers instead of timing out. Not yet measured on Render's free CPU.
+
+### Market agent: can we predict prices?
+
+`forecast/` forecasts monthly **retail** prices from the World Food Programme's Pakistan dataset (CC BY-IGO; wheat, wheat flour, rice, sugar, lentils, mash beans in Karachi, Lahore, Multan, Peshawar and Quetta; no cotton or maize prices exist in it). It is **not** a farm-gate or mandi price. Five simple methods are tried on past data, and a method is only used if it beats "prices stay the same" by at least 5%. `forecast/eval_market.py` replays the whole procedure for the last 12 months using only data available at each date (`evals/market_forecast.json`):
+
+| | Average 3-month error |
+|---|---|
+| Prices stay the same (naive) | **4.50%** |
+| Dehqan's market agent | **4.54%** |
+| Smoothed level + trend / 12-month drift / 6-month drift / same month last year | 5.22% / 5.41% / 6.05% / 13.43% |
+
+- **Nothing beat "prices stay the same".** Over 36 series the agent was better on 0, slightly worse on 4 and tied on 32; it picked a different method on about 7% of forecast dates. In practice it almost always says "no clear signal".
+- **The ranges are mostly honest:** a range meant to hold the outcome 80% of the time did so 84% of the time overall, but only **67% for wheat**, whose prices have been the most volatile (the app says so next to the chart).
+- Limits: retail not farm-gate prices; the latest month is already weeks old; storage, spoilage, interest and transport are ignored; one 12-month replay, so treat the percentages as rough.
+
 ### Running on a 512 MB host: the ONNX backend
 
 Render's free tier has 512 MB of RAM. The PyTorch version of the pipeline needs about **909 MB** (PyTorch alone is 292 MB, and the first request pushes it far higher), so it cannot run there. The server therefore runs on **ONNX Runtime**, with no PyTorch installed:
@@ -287,6 +317,7 @@ These apply to every model in this repo:
 2. Never test on training data; always compare against a simple baseline.
 3. If something does not beat the baseline, the README and the UI say so.
 4. The safety red-team suite must pass 100% in CI before any deploy.
+5. **CI eval gate** (`backend/tests/test_eval_gate.py`): the committed results in `evals/` must still meet the claims made here (gate accuracy, ONNX agreement, severity beats baselines, field data still helps, the lab-to-field gap is still reported, market agent no worse than naive with calibrated ranges). It checks recorded results; it does not retrain in CI.
 
 ## Roadmap
 
@@ -294,9 +325,9 @@ These apply to every model in this repo:
 - [x] **M2 Diagnosis v2:** field-tuned model, severity segmentation, "not a crop" gate, abstention (coverage vs accuracy). *Done, with caveats: field accuracy rose from 11.5% to 47.4% but is still not usable for advice; severity grade accuracy 81.5% vs 42% baseline (wheat weakest); "not a crop" gate accepts 99.6% of leaf photos and wrongly accepts 1% of everyday objects (hard cases like soil and weeds untested).*
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
-- [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent done (spray windows); satellite, market and the supervisor router not started.*
+- [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent, market agent (honestly: it does not beat the naive baseline) and satellite field agent (NDVI, no accuracy number) done; supervisor router not started.*
 - [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API deployed on Render (free) and verified live; website built and checked against it, Vercel deploy pending. CI workflow, PyTorch-free ONNX backend and a step-by-step guide ([docs/DEPLOY.md](docs/DEPLOY.md)) are done.*
-- [ ] **M7 LLMOps:** Langfuse, CI eval gate, drift monitoring, nightly refresh
+- [ ] **M7 LLMOps:** Langfuse, CI eval gate, drift monitoring, nightly refresh. *CI workflow and an eval gate over the committed results are done; Langfuse (needs an account), drift monitoring and the nightly refresh are not.*
 
 Fallback scope if time is tight: 2 crops (wheat, cotton), 2 languages (Urdu, Pashto), 1 mandi region.
 

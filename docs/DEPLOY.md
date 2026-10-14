@@ -25,6 +25,7 @@ closely the ONNX models match the PyTorch ones (results in the README and `evals
 - **Sleeps after ~15 minutes without traffic.** The first request after a nap takes roughly a minute while the
   service wakes. The model files are baked into the image, so there is no download on wake-up.
 - The in-memory rate limit (10 per minute per IP) is per instance and resets on restart.
+- **The satellite field check is the heaviest request.** It took 39 s on the dev PC for a first check of a place; the free plan is slower, so the endpoint stops after 45 s and returns the dates it managed to read (and says how many are missing). Results are cached for 6 hours per place. It is limited to 4 requests per minute per IP. Not yet measured on Render.
 - Photos are processed in memory and not stored.
 
 ## 0. Licenses: read before publishing

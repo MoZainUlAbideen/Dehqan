@@ -27,6 +27,8 @@ from app.ratelimit import RateLimiter
 from app.spray_window import NOTE as SPRAY_NOTE
 from app.spray_window import find_windows
 from data_sources.open_meteo import Hour, fetch_forecast
+from app.field_service import field_report
+from forecast import service as market_service
 from vision.severity import grade
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
@@ -34,6 +36,12 @@ MAX_SIDE_PX = 1024
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 # Rough bounding box of Pakistan; rejects obviously wrong coordinates.
 LAT_RANGE, LON_RANGE = (23.0, 37.5), (60.5, 77.9)
+
+
+class FieldRequest(BaseModel):
+    lat: float = Field(ge=LAT_RANGE[0], le=LAT_RANGE[1])
+    lon: float = Field(ge=LON_RANGE[0], le=LON_RANGE[1])
+    size_m: int = Field(default=300, ge=100, le=1000)
 
 
 class SprayRequest(BaseModel):
@@ -59,6 +67,7 @@ def read_image(data: bytes, content_type: str | None) -> Image.Image:
 def create_app(
     components=None,
     forecast_fn: Callable[[float, float], list[Hour]] = fetch_forecast,
+    field_fn: Callable[..., dict] = field_report,
     diagnose_per_min: int | None = None,
     load_models: bool | None = None,
 ) -> FastAPI:
@@ -66,6 +75,7 @@ def create_app(
         load_models = components is None and os.environ.get("DEHQAN_LOAD_MODELS", "1") != "0"
     limit = diagnose_per_min or int(os.environ.get("DEHQAN_DIAGNOSE_PER_MIN", "10"))
     limiter = RateLimiter(limit, 60.0)
+    field_limiter = RateLimiter(int(os.environ.get("DEHQAN_FIELD_PER_MIN", "4")), 60.0)  # satellite reads are heavy
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -123,6 +133,27 @@ def create_app(
             "note": SPRAY_NOTE,
             "message": "No safe spray window in the next 5 days." if not windows else f"{len(windows)} safe spray window(s) found.",
         }
+
+    @app.post("/field-ndvi")
+    def field_ndvi(req: FieldRequest, request: Request):
+        client = request.client.host if request.client else "unknown"
+        if not field_limiter.allow(client):
+            raise HTTPException(429, "too many satellite requests; please wait a minute")
+        try:
+            return field_fn(req.lat, req.lon, req.size_m)
+        except (httpx.HTTPError, OSError) as e:
+            raise HTTPException(502, "satellite data service unavailable; try again later") from e
+
+    @app.get("/market/options")
+    def market_options():
+        return market_service.options()
+
+    @app.get("/market")
+    def market(commodity: str, market: str):
+        try:
+            return market_service.analysis(commodity, market)
+        except KeyError:
+            raise HTTPException(404, "no reliable price history for that commodity and market") from None
 
     return app
 

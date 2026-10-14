@@ -1,0 +1,51 @@
+{
+  "evaluated_months": 12,
+  "target_coverage": 0.8,
+  "overall": {
+    "agent_error_pct": 4.54,
+    "naive_error_pct": 4.5,
+    "coverage": 0.843
+  },
+  "by_commodity": {
+    "Beans(mash)": {
+      "agent_error_pct": 3.04,
+      "naive_error_pct": 3.0,
+      "coverage": 0.928
+    },
+    "Lentils (masur)": {
+      "agent_error_pct": 3.17,
+      "naive_error_pct": 3.17,
+      "coverage": 0.828
+    },
+    "Lentils (moong)": {
+      "agent_error_pct": 2.27,
+      "naive_error_pct": 2.27,
+      "coverage": 0.967
+    },
+    "Rice (basmati, broken)": {
+      "agent_error_pct": 2.01,
+      "naive_error_pct": 1.9,
+      "coverage": 0.872
+    },
+    "Rice (coarse)": {
+      "agent_error_pct": 2.1,
+      "naive_error_pct": 2.08,
+      "coverage": 0.896
+    },
+    "Sugar": {
+      "agent_error_pct": 5.32,
+      "naive_error_pct": 5.32,
+      "coverage": 0.756
+    },
+    "Wheat": {
+      "agent_error_pct": 12.08,
+      "naive_error_pct": 11.99,
+      "coverage": 0.667
+    },
+    "Wheat flour": {
+      "agent_error_pct": 7.76,
+      "naive_error_pct": 7.76,
+      "coverage": 0.847
+    }
+  }
+}

@@ -3,6 +3,7 @@ import cotton from "@/data/evals/cotton_cross_source.json";
 import corn from "@/data/evals/corn_field.json";
 import gate from "@/data/evals/crop_gate.json";
 import fieldTuned from "@/data/evals/field_tuned.json";
+import market from "@/data/evals/market_forecast.json";
 import baseline from "@/data/evals/baseline_lab_vs_field.json";
 import severity from "@/data/evals/severity.json";
 
@@ -166,13 +167,48 @@ export default function AccuracyPage() {
         </p>
       </section>
 
+      <section className="mt-12">
+        <h2 className="font-display text-2xl font-semibold">6. Can we predict prices?</h2>
+        <p className="mt-2 max-w-3xl text-ink-2">
+          Dehqan only gives a sell-or-hold hint when its forecast beats the simplest possible guess: &quot;prices stay where they are&quot;.
+          We replayed the last {market.n_forecasts_per_series / 3} months of retail prices for {market.n_series} crop and market series, using only data
+          available at each date, and compared.
+        </p>
+        <div className="mt-5">
+          <BarChart
+            title="Average error of a 3-month price forecast (lower is better)"
+            caption={`${market.n_series} series, ${market.n_forecasts_per_series} forecasts each. Source: WFP retail prices for Pakistan.`}
+            unit="%"
+            max={15}
+            decimals={2}
+            rows={[
+              { label: "Prices stay the same", value: market.mean_error_pct.naive_baseline },
+              { label: "Dehqan's market agent", value: market.mean_error_pct.agent, emphasis: true },
+              { label: "Smoothed level and trend", value: market.fixed_method_mean_error_pct_for_context.holt_damped },
+              { label: "Continue the last 12 months' trend", value: market.fixed_method_mean_error_pct_for_context.drift_12m },
+              { label: "Continue the last 6 months' trend", value: market.fixed_method_mean_error_pct_for_context.drift_6m },
+              { label: "Same month as last year", value: market.fixed_method_mean_error_pct_for_context.seasonal_naive },
+            ]}
+          />
+        </div>
+        <p className="mt-3 max-w-3xl text-sm text-ink-2">
+          <strong>No method beat &quot;prices stay the same&quot;.</strong> The agent was better on {market.series_agent_better_than_naive} of {market.n_series} series,
+          slightly worse on {market.series_agent_worse_than_naive}, and tied on {market.series_tied} (it picks &quot;prices stay the same&quot; unless another method
+          clearly wins in a past test). So in practice it almost always says &quot;no clear signal&quot;, and that is the honest answer. Its ranges aimed to contain
+          the outcome {Math.round(market.range_coverage.target * 100)}% of the time and did {Math.round(market.range_coverage.observed_all_horizons * 100)}% overall, but only{" "}
+          {Math.round(market.by_commodity.Wheat.coverage * 100)}% for wheat, whose prices have been the most volatile. These are retail prices, not what
+          a farmer is paid at the mandi.
+        </p>
+      </section>
+
       <section className="mt-12 rounded-2xl border border-gold/50 bg-gold-soft p-6">
         <h2 className="font-display text-2xl font-semibold">What is not solved yet</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-ink-2">
           <li>No wheat or cotton disease classifier that works on new cameras. Pakistani field photos are still needed.</li>
           <li>None of our field data comes from Pakistan (nearest public sources: China, Bangladesh).</li>
           <li>No pesticide advice. Dose and safety must come from official Pakistani documents we do not have loaded yet, and the app never invents them.</li>
-          <li>Voice notes, satellite field checks and market advice are not built yet.</li>
+          <li>The satellite field check shows greenness (NDVI), a physical measurement, but its &quot;even or patchy&quot; reading uses thresholds we chose and has not been checked against ground truth.</li>
+          <li>Price forecasts do not beat the simple &quot;prices stay the same&quot; guess, so market advice is mostly &quot;no clear signal&quot;. Voice notes and satellite field checks are not built yet.</li>
         </ul>
       </section>
     </div>

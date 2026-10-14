@@ -104,3 +104,72 @@ def test_spray_window_502_when_weather_service_fails():
         raise httpx.ConnectError("down")
 
     assert client(forecast_fn=boom).post("/spray-window", json={"lat": 34.0, "lon": 71.5}).status_code == 502
+
+
+# ---------- market agent endpoints (use the committed WFP price snapshot) ----------
+def test_market_options_lists_commodities_with_their_markets_and_source():
+    body = client().get("/market/options").json()
+    names = {c["name"]: c for c in body["commodities"]}
+    assert "Wheat" in names and "Peshawar" in names["Wheat"]["markets"]
+    assert names["Wheat"]["unit"].startswith("PKR per")
+    assert "WFP" in body["source"] or "World Food Programme" in body["source"]
+    assert len(body["data_as_of"]) == 7  # YYYY-MM
+
+
+def test_market_analysis_has_history_forecast_range_honest_method_and_caveats():
+    r = client().get("/market", params={"commodity": "Wheat", "market": "Peshawar"})
+    assert r.status_code == 200
+    b = r.json()
+    assert len(b["history"]) == 36 and len(b["forecast"]) == 3
+    assert all(f["low"] <= f["high"] for f in b["forecast"])
+    assert b["signal"] in {"hold", "sell", "none"}
+    assert "beats_naive" in b["method"] and b["method"]["name"]
+    assert any("retail" in c for c in b["caveats"])
+    assert b["track_record"]["months_checked"] == 12 and b["source"]
+
+
+def test_market_unknown_or_too_gappy_series_is_a_clear_404():
+    c = client()
+    assert c.get("/market", params={"commodity": "Cotton", "market": "Lahore"}).status_code == 404
+    assert c.get("/market", params={"commodity": "Wheat flour", "market": "Peshawar"}).status_code == 404  # data has big holes
+
+
+def test_market_requires_both_parameters():
+    assert client().get("/market", params={"commodity": "Wheat"}).status_code == 422
+
+
+# ---------- satellite field report endpoint (fake report function: no network) ----------
+FAKE_REPORT = {"center": {"lat": 34.0, "lon": 71.5}, "size_m": 300, "points": [], "latest": None, "message": "ok", "caveats": ["c"], "source": "s"}
+
+
+def test_field_ndvi_passes_pin_and_size_to_the_report_function_and_returns_it():
+    seen = {}
+
+    def fake(lat, lon, size_m):
+        seen.update(lat=lat, lon=lon, size_m=size_m)
+        return FAKE_REPORT
+
+    r = client(field_fn=fake).post("/field-ndvi", json={"lat": 34.0, "lon": 71.5, "size_m": 500})
+    assert r.status_code == 200 and r.json()["message"] == "ok" and seen == {"lat": 34.0, "lon": 71.5, "size_m": 500}
+
+
+def test_field_ndvi_defaults_the_size_and_validates_inputs():
+    c = client(field_fn=lambda lat, lon, size_m: {"size_m": size_m})
+    assert c.post("/field-ndvi", json={"lat": 34.0, "lon": 71.5}).json()["size_m"] == 300
+    assert c.post("/field-ndvi", json={"lat": 51.5, "lon": -0.1}).status_code == 422          # not Pakistan
+    assert c.post("/field-ndvi", json={"lat": 34.0, "lon": 71.5, "size_m": 50}).status_code == 422
+    assert c.post("/field-ndvi", json={"lat": 34.0, "lon": 71.5, "size_m": 5000}).status_code == 422
+
+
+def test_field_ndvi_502_when_the_satellite_service_fails():
+    def boom(lat, lon, size_m):
+        raise httpx.ConnectError("down")
+
+    assert client(field_fn=boom).post("/field-ndvi", json={"lat": 34.0, "lon": 71.5}).status_code == 502
+
+
+def test_field_ndvi_is_rate_limited(monkeypatch):
+    monkeypatch.setenv("DEHQAN_FIELD_PER_MIN", "2")
+    c = client(field_fn=lambda lat, lon, size_m: FAKE_REPORT)
+    codes = [c.post("/field-ndvi", json={"lat": 34.0, "lon": 71.5}).status_code for _ in range(3)]
+    assert codes == [200, 200, 429]

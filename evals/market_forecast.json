@@ -1,0 +1,505 @@
+{
+  "what": "Walk-forward replay of the market agent on WFP Pakistan retail prices (monthly), last 12 forecast dates, 3 months ahead",
+  "n_series": 36,
+  "n_forecasts_per_series": 36,
+  "mean_error_pct": {
+    "agent": 4.54,
+    "naive_baseline": 4.5
+  },
+  "series_agent_better_than_naive": 0,
+  "series_agent_worse_than_naive": 4,
+  "series_tied": 32,
+  "share_of_forecast_dates_where_agent_used_a_method_other_than_naive": 0.072,
+  "range_coverage": {
+    "target": 0.8,
+    "observed_all_horizons": 0.843,
+    "observed_by_horizon_months": [
+      0.845,
+      0.843,
+      0.843
+    ]
+  },
+  "fixed_method_mean_error_pct_for_context": {
+    "drift_12m": 5.41,
+    "drift_6m": 6.05,
+    "holt_damped": 5.22,
+    "naive": 4.5,
+    "seasonal_naive": 13.43
+  },
+  "by_commodity": {
+    "Beans(mash)": {
+      "agent_error_pct": 3.04,
+      "naive_error_pct": 3.0,
+      "coverage": 0.928
+    },
+    "Lentils (masur)": {
+      "agent_error_pct": 3.17,
+      "naive_error_pct": 3.17,
+      "coverage": 0.828
+    },
+    "Lentils (moong)": {
+      "agent_error_pct": 2.27,
+      "naive_error_pct": 2.27,
+      "coverage": 0.967
+    },
+    "Rice (basmati, broken)": {
+      "agent_error_pct": 2.01,
+      "naive_error_pct": 1.9,
+      "coverage": 0.872
+    },
+    "Rice (coarse)": {
+      "agent_error_pct": 2.1,
+      "naive_error_pct": 2.08,
+      "coverage": 0.896
+    },
+    "Sugar": {
+      "agent_error_pct": 5.32,
+      "naive_error_pct": 5.32,
+      "coverage": 0.756
+    },
+    "Wheat": {
+      "agent_error_pct": 12.08,
+      "naive_error_pct": 11.99,
+      "coverage": 0.667
+    },
+    "Wheat flour": {
+      "agent_error_pct": 7.76,
+      "naive_error_pct": 7.76,
+      "coverage": 0.847
+    }
+  },
+  "per_series": {
+    "Beans(mash) | Karachi": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0369,
+      "naive_mape": 0.0369,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9167,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        0.9166666666666666,
+        0.9166666666666666
+      ]
+    },
+    "Beans(mash) | Lahore": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0459,
+      "naive_mape": 0.0459,
+      "chose_non_naive": 0.0,
+      "coverage": 0.75,
+      "coverage_by_horizon": [
+        0.75,
+        0.6666666666666666,
+        0.8333333333333334
+      ]
+    },
+    "Beans(mash) | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0169,
+      "naive_mape": 0.0169,
+      "chose_non_naive": 0.0,
+      "coverage": 1.0,
+      "coverage_by_horizon": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Beans(mash) | Peshawar": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0245,
+      "naive_mape": 0.0245,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        1.0,
+        1.0
+      ]
+    },
+    "Beans(mash) | Quetta": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0277,
+      "naive_mape": 0.0259,
+      "chose_non_naive": 0.75,
+      "coverage": 1.0,
+      "coverage_by_horizon": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Lentils (masur) | Karachi": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0371,
+      "naive_mape": 0.0371,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8056,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.8333333333333334,
+        0.75
+      ]
+    },
+    "Lentils (masur) | Lahore": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0251,
+      "naive_mape": 0.0251,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8056,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        0.75,
+        0.75
+      ]
+    },
+    "Lentils (masur) | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0185,
+      "naive_mape": 0.0185,
+      "chose_non_naive": 0.0,
+      "coverage": 1.0,
+      "coverage_by_horizon": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Lentils (masur) | Peshawar": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0328,
+      "naive_mape": 0.0328,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8333,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        0.8333333333333334,
+        0.75
+      ]
+    },
+    "Lentils (masur) | Quetta": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0451,
+      "naive_mape": 0.0451,
+      "chose_non_naive": 0.0,
+      "coverage": 0.6944,
+      "coverage_by_horizon": [
+        0.75,
+        0.6666666666666666,
+        0.6666666666666666
+      ]
+    },
+    "Lentils (moong) | Karachi": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0175,
+      "naive_mape": 0.0175,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        1.0,
+        1.0,
+        0.9166666666666666
+      ]
+    },
+    "Lentils (moong) | Lahore": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0313,
+      "naive_mape": 0.0313,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9167,
+      "coverage_by_horizon": [
+        1.0,
+        0.9166666666666666,
+        0.8333333333333334
+      ]
+    },
+    "Lentils (moong) | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0181,
+      "naive_mape": 0.0181,
+      "chose_non_naive": 0.0,
+      "coverage": 1.0,
+      "coverage_by_horizon": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "Lentils (moong) | Peshawar": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0185,
+      "naive_mape": 0.0185,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        1.0,
+        1.0,
+        0.9166666666666666
+      ]
+    },
+    "Lentils (moong) | Quetta": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.028,
+      "naive_mape": 0.028,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        1.0,
+        1.0
+      ]
+    },
+    "Rice (basmati, broken) | Karachi": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0186,
+      "naive_mape": 0.013,
+      "chose_non_naive": 1.0,
+      "coverage": 0.8889,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.9166666666666666,
+        0.9166666666666666
+      ]
+    },
+    "Rice (basmati, broken) | Lahore": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0216,
+      "naive_mape": 0.0216,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        1.0,
+        1.0
+      ]
+    },
+    "Rice (basmati, broken) | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0001,
+      "naive_mape": 0.0001,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8056,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.8333333333333334,
+        0.75
+      ]
+    },
+    "Rice (basmati, broken) | Peshawar": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0215,
+      "naive_mape": 0.0215,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        1.0,
+        1.0
+      ]
+    },
+    "Rice (basmati, broken) | Quetta": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0389,
+      "naive_mape": 0.0389,
+      "chose_non_naive": 0.0,
+      "coverage": 0.7222,
+      "coverage_by_horizon": [
+        0.5833333333333334,
+        0.75,
+        0.8333333333333334
+      ]
+    },
+    "Rice (coarse) | Karachi": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0111,
+      "naive_mape": 0.0104,
+      "chose_non_naive": 0.75,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        1.0,
+        1.0
+      ]
+    },
+    "Rice (coarse) | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0134,
+      "naive_mape": 0.0134,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8889,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.9166666666666666,
+        0.9166666666666666
+      ]
+    },
+    "Rice (coarse) | Peshawar": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0263,
+      "naive_mape": 0.0263,
+      "chose_non_naive": 0.0,
+      "coverage": 0.9722,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        1.0,
+        1.0
+      ]
+    },
+    "Rice (coarse) | Quetta": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0331,
+      "naive_mape": 0.0331,
+      "chose_non_naive": 0.0,
+      "coverage": 0.75,
+      "coverage_by_horizon": [
+        0.75,
+        0.6666666666666666,
+        0.8333333333333334
+      ]
+    },
+    "Sugar | Karachi": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0545,
+      "naive_mape": 0.0545,
+      "chose_non_naive": 0.0,
+      "coverage": 0.7778,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.75,
+        0.75
+      ]
+    },
+    "Sugar | Lahore": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0379,
+      "naive_mape": 0.0379,
+      "chose_non_naive": 0.0,
+      "coverage": 0.7778,
+      "coverage_by_horizon": [
+        0.75,
+        0.8333333333333334,
+        0.75
+      ]
+    },
+    "Sugar | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0508,
+      "naive_mape": 0.0508,
+      "chose_non_naive": 0.0,
+      "coverage": 0.7778,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.75,
+        0.75
+      ]
+    },
+    "Sugar | Peshawar": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0479,
+      "naive_mape": 0.0479,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8333,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.8333333333333334,
+        0.8333333333333334
+      ]
+    },
+    "Sugar | Quetta": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0748,
+      "naive_mape": 0.0748,
+      "chose_non_naive": 0.0,
+      "coverage": 0.6111,
+      "coverage_by_horizon": [
+        0.5833333333333334,
+        0.5833333333333334,
+        0.6666666666666666
+      ]
+    },
+    "Wheat | Karachi": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.1143,
+      "naive_mape": 0.1143,
+      "chose_non_naive": 0.0,
+      "coverage": 0.7222,
+      "coverage_by_horizon": [
+        0.6666666666666666,
+        0.75,
+        0.75
+      ]
+    },
+    "Wheat | Lahore": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.1101,
+      "naive_mape": 0.1101,
+      "chose_non_naive": 0.0,
+      "coverage": 0.7222,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.6666666666666666,
+        0.6666666666666666
+      ]
+    },
+    "Wheat | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.1429,
+      "naive_mape": 0.1429,
+      "chose_non_naive": 0.0,
+      "coverage": 0.5833,
+      "coverage_by_horizon": [
+        0.5833333333333334,
+        0.5833333333333334,
+        0.5833333333333334
+      ]
+    },
+    "Wheat | Peshawar": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.1223,
+      "naive_mape": 0.1223,
+      "chose_non_naive": 0.0,
+      "coverage": 0.7222,
+      "coverage_by_horizon": [
+        0.75,
+        0.6666666666666666,
+        0.75
+      ]
+    },
+    "Wheat | Quetta": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.1142,
+      "naive_mape": 0.1098,
+      "chose_non_naive": 0.0833,
+      "coverage": 0.5833,
+      "coverage_by_horizon": [
+        0.5833333333333334,
+        0.5833333333333334,
+        0.5833333333333334
+      ]
+    },
+    "Wheat flour | Lahore": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0767,
+      "naive_mape": 0.0767,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8333,
+      "coverage_by_horizon": [
+        0.8333333333333334,
+        0.8333333333333334,
+        0.8333333333333334
+      ]
+    },
+    "Wheat flour | Multan": {
+      "n_cutoffs": 12,
+      "agent_mape": 0.0785,
+      "naive_mape": 0.0785,
+      "chose_non_naive": 0.0,
+      "coverage": 0.8611,
+      "coverage_by_horizon": [
+        0.9166666666666666,
+        0.8333333333333334,
+        0.8333333333333334
+      ]
+    }
+  }
+}
