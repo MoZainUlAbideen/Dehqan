@@ -24,13 +24,25 @@ def test_everything_reachable_reports_ok_with_timings():
     assert len(r["services"]["price_data"]["data_as_of"]) == 7
 
 
-def test_a_rate_limited_weather_service_is_named_with_its_status_and_reason():
+def test_a_rate_limited_weather_service_is_named_but_a_working_backup_keeps_weather_ok():
     status._cache = None
     limited = lambda request: httpx.Response(429, json={"error": True, "reason": "Daily API request limit exceeded"})
     r = status.check(True, client=client_for(limited, ok), now=0.0)
     w = r["services"]["open_meteo_weather"]
-    assert r["ok"] is False and w["ok"] is False and w["http_status"] == 429 and "limit exceeded" in w["error"]
-    assert r["services"]["sentinel2_catalogue"]["ok"] is True      # one failure does not hide the others
+    assert w["ok"] is False and w["http_status"] == 429 and "limit exceeded" in w["error"]
+    assert r["services"]["met_no_weather_backup"]["ok"] is True
+    assert r["ok"] is True and r["weather_source_in_use"] == "met.no (backup)"      # the app still has weather
+
+
+def test_with_both_weather_sources_down_the_report_says_weather_is_unavailable():
+    status._cache = None
+    down = lambda request: httpx.Response(503, json={"reason": "down"})
+
+    def handler(request):
+        return ok(request) if "earth-search" in request.url.host else down(request)
+
+    r = status.check(True, client=httpx.Client(transport=httpx.MockTransport(handler)), now=0.0)
+    assert r["ok"] is False and r["weather_source_in_use"] is None
 
 
 def test_a_network_error_is_reported_with_its_type():

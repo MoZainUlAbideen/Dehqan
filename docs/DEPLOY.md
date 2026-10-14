@@ -89,7 +89,9 @@ Render has not deployed the latest commit. In the Render dashboard open the serv
 deploy failed (open its log), or was never triggered (**Manual Deploy → Deploy latest commit**; also check
 Settings → Build & Deploy → Auto-Deploy is "On Commit"). A failed deploy leaves the previous version running.
 
-**An answer says "weather service unavailable".** Open `https://<your-service>.onrender.com/status`. It names the failing service
+**Weather stops working (or says it is using a backup source).** Open `/status`: it shows each weather source with its HTTP status. A 429 from Open-Meteo means its daily limit for your host's shared IP is used up; the app then uses MET Norway automatically and labels the answer as backup. If BOTH fail, `/status` shows why.
+
+**Older versions said "weather service unavailable".** Open `https://<your-service>.onrender.com/status`. It names the failing service
 with its HTTP status or error (for example a 429 rate limit from the weather service, which can happen when many apps share
 a host's IP address). The service log also records each failed attempt with its reason, and weather calls retry twice first.
 

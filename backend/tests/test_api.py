@@ -30,7 +30,12 @@ def fake_components(gate=0.9, label="Tomato___Late_blight", conf=0.95, sev=0.2, 
     return SimpleNamespace(gate=lambda img: gate, classifier=classifier, severity=lambda img: sev)
 
 
+def _no_backup(lat, lon):
+    raise httpx.ConnectError("no backup in tests")  # tests must never reach the real backup weather service
+
+
 def client(components=None, **kw):
+    kw.setdefault("backup_forecast_fn", _no_backup)
     return TestClient(create_app(components=components, load_models=False, **kw))
 
 

@@ -88,7 +88,7 @@ An end-to-end slice you can run locally (see "Run it"):
 | Piece | What it does | Where |
 |---|---|---|
 | `POST /diagnose` | Photo in; checks it is a leaf (CLIP), names a likely condition or says "not sure", and estimates severity. Always returns `limitations` for the UI to show | `backend/app/` |
-| `POST /spray-window` | Live 5-day Open-Meteo forecast in; low-wind, dry, mild-weather hours out (thresholds are rules of thumb, and the response says so) | `backend/app/spray_window.py` |
+| `POST /spray-window` | Live 5-day Open-Meteo forecast in (with an automatic **backup source**, see below); low-wind, dry, mild-weather hours out (thresholds are rules of thumb, and the response says so) | `backend/app/spray_window.py` |
 | Safety guardrail | Rejects banned or unregistered pesticides and any dose not quoted verbatim from a cited source. Not yet wired to the API: it has no pesticide data to work with | `backend/rag/guardrail.py` |
 | Website | Home with an English and Urdu explanation and an animated map showing **real live weather** for 8 farming-region cities (Open-Meteo, refreshed every 10 minutes), diagnose (upload or camera), spray window (hour-by-hour grid), and a "How we measured accuracy" page that reads the real eval files | `frontend/` |
 
@@ -245,6 +245,18 @@ Outcomes: `approved`, `no_dose` (registered, but no dose to give, so the farmer 
 **What it does not do:** it proves a dose is *traceable* to a document, not that the sentence means what we think. A source saying "do NOT spray more than 200 ml" would still verify the dose "200 ml". That is why the faithfulness eval and red-team suite (still to build) matter.
 
 **Blocked on data:** the registered and banned lists are *inputs*, and we do not yet have them. Searches point to the Punjab Agriculture Department's crop-wise agrochemical list (with WHO hazard class and antidotes) and the federal Department of Plant Protection, but from our machine those sites did not resolve, and we will not invent a pesticide list. The official wheat-rust advisories we found also appear to tell farmers to follow local expert advice and, as far as we could see, give no dose. If that holds, the honest product behaviour for wheat rust is often `no_dose` plus a referral, not a made-up number.
+
+### Weather source and its backup
+
+Spray windows use Open-Meteo (hourly for 5 days, with wind gusts and rain probability). On the live deploy it started failing with `429: Daily API request limit exceeded`: the limit is per IP address, and a free hosting plan shares addresses with many other apps. The `/status` endpoint is what revealed the exact cause. So `app/weather.py` now falls back automatically to **MET Norway** (free, no key):
+
+| | Open-Meteo (primary) | MET Norway (backup) |
+|---|---|---|
+| Range | 5 days, hourly | about 64 hours, hourly |
+| Wind gusts, rain probability | yes | **no** (only the rain amount of each hour) |
+| Spray rules | strict (wind, gusts, rain chance, heat, 3 dry hours after) | wind speed, forecast rain amount, heat, daylight, and **9** dry hours after |
+
+Missing data is never invented: with the strict rules a missing gust or rain probability still means "not safe". The backup rules waive only the two checks whose data does not exist, and compensate by asking for a longer dry spell afterwards. The 9 hours comes from one comparison on real Lahore data (14 Oct 2026): with 3 hours the backup offered a Thursday morning window that Open-Meteo withheld because of afternoon showers (which the backup's own data also showed, 0.1 to 0.2 mm); with 9 hours it matches. One city, one day: a starting point, not a validated number. Every answer from the backup says so, on the site and in Ask Dehqan, in English and Urdu.
 
 ### Supervisor router: `POST /ask`
 

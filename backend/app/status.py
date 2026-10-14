@@ -14,6 +14,8 @@ from forecast import service as market_service
 
 CACHE_SECONDS = 60
 OPEN_METEO = "https://api.open-meteo.com/v1/forecast?latitude=31.5&longitude=74.3&hourly=temperature_2m&forecast_days=1"
+MET_NO = "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=31.5&lon=74.3"
+MET_NO_UA = {"User-Agent": "dehqan-app/0.1 (+https://github.com/MoZainUlAbideen/Dehqan)"}
 STAC = "https://earth-search.aws.element84.com/v1/search"
 STAC_BODY = {"collections": ["sentinel-2-l2a"], "bbox": [74.3, 31.5, 74.31, 31.51], "limit": 1}
 
@@ -42,6 +44,7 @@ def check(models_loaded: bool, client: httpx.Client | None = None, now: float | 
     try:
         services = {
             "open_meteo_weather": _timed(lambda: client.get(OPEN_METEO)),
+            "met_no_weather_backup": _timed(lambda: client.get(MET_NO, headers=MET_NO_UA)),
             "sentinel2_catalogue": _timed(lambda: client.post(STAC, json=STAC_BODY)),
         }
     finally:
@@ -52,6 +55,8 @@ def check(models_loaded: bool, client: httpx.Client | None = None, now: float | 
     except Exception as e:  # the snapshot file missing or unreadable
         prices = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:120]}"}
     services["price_data"] = prices
-    report = {"ok": all(s["ok"] for s in services.values()), "services": services}
+    weather_ok = services["open_meteo_weather"]["ok"] or services["met_no_weather_backup"]["ok"]  # either one keeps weather working
+    others_ok = all(s["ok"] for k, s in services.items() if k not in ("open_meteo_weather", "met_no_weather_backup"))
+    report = {"ok": weather_ok and others_ok, "weather_source_in_use": "open-meteo" if services["open_meteo_weather"]["ok"] else ("met.no (backup)" if weather_ok else None), "services": services}
     _cache = (now, report)
     return {**report, "models_loaded": models_loaded, "cached": False}

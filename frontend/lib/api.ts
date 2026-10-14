@@ -22,12 +22,14 @@ export type SprayWindow = {
   end: string; // local ISO time of last safe hour (inclusive)
   hours: number;
   max_wind_kmh: number;
-  max_rain_prob_pct: number;
+  max_rain_prob_pct: number | null; // null when the weather source gives no rain probability (backup)
 };
 
 export type SprayResponse = {
   forecast_start: string | null; // local ISO time of the first forecast hour
   forecast_hours: number;
+  source?: string; // "open-meteo" or "met.no (backup)"
+  backup?: boolean;
   windows: SprayWindow[];
   note: string;
   message: string;

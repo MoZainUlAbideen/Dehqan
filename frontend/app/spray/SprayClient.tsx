@@ -65,6 +65,12 @@ export default function SprayClient() {
         {state.kind === "ok" && (
           <>
             <p className="mt-2 font-medium">{state.data.message}</p>
+            {state.data.backup && (
+              <p role="status" className="mt-2 rounded-lg border border-gold/50 bg-gold-soft p-3 text-sm">
+                <strong>Backup weather source in use.</strong> The main one is unavailable, so this covers only about {Math.max(1, Math.floor(state.data.forecast_hours / 24))} days and
+                has no wind-gust or rain-probability data: windows rest on wind speed and forecast rain amount alone.
+              </p>
+            )}
             {state.data.forecast_start && (
               <div className="mt-5"><SprayTimeline windows={state.data.windows} start={state.data.forecast_start} hours={state.data.forecast_hours} /></div>
             )}
@@ -73,7 +79,7 @@ export default function SprayClient() {
                 {state.data.windows.map((w) => (
                   <li key={w.start} className="rounded-lg border border-line bg-surface-2 px-4 py-2 text-sm">
                     <span className="font-semibold">{fmtDay(w.start)}</span>, {fmtTime(w.start)} to {fmtTime(w.end)} ({w.hours} h)
-                    <span className="ml-2 text-ink-3">wind up to {w.max_wind_kmh} km/h, rain chance up to {w.max_rain_prob_pct}%</span>
+                    <span className="ml-2 text-ink-3">wind up to {w.max_wind_kmh} km/h, {w.max_rain_prob_pct === null ? "no rain forecast" : `rain chance up to ${w.max_rain_prob_pct}%`}</span>
                   </li>
                 ))}
               </ul>

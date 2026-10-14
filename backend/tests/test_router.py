@@ -25,7 +25,7 @@ class Calls:
 def make_agents(calls: Calls, signal="none", beats=False) -> Agents:
     def spray(lat, lon):
         calls.log.append(("spray", lat, lon))
-        return [WINDOW]
+        return [WINDOW], "open-meteo"
 
     def market(commodity, market_name):
         calls.log.append(("market", commodity, market_name))

@@ -26,7 +26,8 @@ from pydantic import BaseModel, Field, model_validator
 from app.pipeline import ABSTAIN_THRESHOLD, ABSTAIN_THRESHOLD_NOTE, diagnose
 from app.ratelimit import RateLimiter
 from app.spray_window import NOTE as SPRAY_NOTE
-from app.spray_window import find_windows
+from app.weather import BACKUP_NOTE, spray_windows
+from data_sources.met_no import fetch_met_no
 from data_sources.open_meteo import Hour, fetch_forecast
 from app import status as dependency_status
 from app.field_service import field_report
@@ -86,6 +87,7 @@ def read_image(data: bytes, content_type: str | None) -> Image.Image:
 def create_app(
     components=None,
     forecast_fn: Callable[[float, float], list[Hour]] = fetch_forecast,
+    backup_forecast_fn: Callable[[float, float], list[Hour]] = fetch_met_no,
     field_fn: Callable[..., dict] = field_report,
     diagnose_per_min: int | None = None,
     load_models: bool | None = None,
@@ -147,21 +149,27 @@ def create_app(
     @app.post("/spray-window")
     def spray_window(req: SprayRequest):
         try:
-            hours = forecast_fn(req.lat, req.lon)
+            fc, windows = spray_windows(req.lat, req.lon, forecast_fn, backup_forecast_fn)
         except (httpx.HTTPError, ValueError) as e:
-            log.error("spray-window: weather lookup failed: %s: %s", type(e).__name__, str(e)[:200])
+            log.error("spray-window: no weather source available: %s: %s", type(e).__name__, str(e)[:200])
             raise HTTPException(502, "weather service unavailable; try again later") from e
-        windows = find_windows(hours)
+        days = max(1, len(fc.hours) // 24)
         return {
-            "forecast_start": hours[0].time.isoformat() if hours else None,
-            "forecast_hours": len(hours),
+            "forecast_start": fc.hours[0].time.isoformat() if fc.hours else None,
+            "forecast_hours": len(fc.hours),
+            "source": fc.source,
+            "backup": fc.backup,
             "windows": [asdict(w) for w in windows],
-            "note": SPRAY_NOTE,
-            "message": "No safe spray window in the next 5 days." if not windows else f"{len(windows)} safe spray window(s) found.",
+            "note": SPRAY_NOTE + (" " + BACKUP_NOTE if fc.backup else ""),
+            "message": f"No safe spray window in the next {days} days." if not windows else f"{len(windows)} safe spray window(s) found.",
         }
 
+    def _spray_agent(lat: float, lon: float):
+        fc, windows = spray_windows(lat, lon, forecast_fn, backup_forecast_fn)
+        return [asdict(w) for w in windows], fc.source
+
     agents = Agents(
-        spray=lambda lat, lon: [asdict(w) for w in find_windows(forecast_fn(lat, lon))],
+        spray=_spray_agent,
         market_options=market_service.options,
         market=market_service.analysis,
         field=lambda lat, lon: field_fn(lat, lon, 300),

@@ -45,6 +45,7 @@ _Last updated: 2026-10-14_
   - [x] CI workflow + eval gate over committed results (tests/test_eval_gate.py); proven to fail when a number regresses
   - [x] Operational visibility: GET /status (live dependency check with reasons), log lines that say why an outside call failed, weather retries on 429/5xx, friendly 'not available on the server yet' message in the site
   - [x] CI builds the Docker image and starts the server in it (catches missing system libraries). First Render deploy of the satellite code crashed on a missing libexpat (rasterio); fixed in the Dockerfile after reading the wheels' library requirements. Not run locally: Docker Desktop made the 8 GB dev PC hang (C: was at 0.2 GB free), so the check lives in GitHub Actions
+  - [x] Backup weather source: Open-Meteo hit 'Daily API request limit exceeded' (429) for Render's shared IP, found via /status. Automatic fallback to MET Norway (no gusts/rain probability, ~64 h) with adapted rules (9 dry hours after), labelled as backup in the API, site and Ask (EN/UR). Rules compared on one real Lahore day. 217 tests
   - [ ] Langfuse tracing (needs account keys), drift monitoring, nightly data refresh
 
 ## Session log
@@ -53,3 +54,4 @@ _Last updated: 2026-10-14_
 - 2026-10-14: Live on Render + ONNX backend; vivid theme, live animated map, Urdu explanation; market agent (honest: no method beats naive); satellite NDVI field agent (2 real bugs found and fixed); CI eval gate. 138 tests.
 - 2026-10-14 (later): supervisor router (/ask) with bilingual answers and a frozen-test-set evaluation; eval gate extended to the router; 192 backend tests.
 - 2026-10-14 (night): Render log showed libexpat crash; Dockerfile fixed; freed 5.3 GB on C: (Dehqan dataset caches only); Docker Desktop shut down.
+- 2026-10-14 (night): live Render verified: market, ask, diagnose, satellite (14 s) work; weather 502 from Open-Meteo 429 -> backup source built.

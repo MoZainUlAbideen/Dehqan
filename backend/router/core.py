@@ -39,7 +39,7 @@ UR_MONTHS = ["جنوری", "فروری", "مارچ", "اپریل", "مئی", "ج
 @dataclass(frozen=True)
 class Agents:
     """The specialist agents, passed in so the router can be tested without the network."""
-    spray: Callable[[float, float], list[dict]]        # lat, lon -> safe windows: [{"start", "end", "hours"}, ...]
+    spray: Callable[[float, float], tuple[list[dict], str]]  # lat, lon -> (safe windows [{"start","end","hours"}], weather source name)
     market_options: Callable[[], dict]                 # -> {"commodities": [{"name", "markets": [...]}]}
     market: Callable[[str, str], dict]                 # commodity, market -> analysis (KeyError if none)
     field: Callable[[float, float], dict]              # lat, lon -> field report
@@ -130,17 +130,21 @@ def weather_part(city: City | None, lat: float | None, lon: float | None, agents
         lat, lon = city.lat, city.lon
     name_en = city.name if city else "your location"
     name_ur = city.urdu if city else "آپ کے مقام"
-    windows = agents.spray(lat, lon)[:3]
+    all_windows, source = agents.spray(lat, lon)
+    windows = all_windows[:3]
+    backup = source != "open-meteo"
+    note_en = " (Backup weather source in use: about 2 days only, and no wind-gust or rain-probability data.)" if backup else ""
+    note_ur = " (متبادل موسمی ذریعہ استعمال ہو رہا ہے: صرف تقریباً دو دن، اور ہوا کے جھکڑ یا بارش کے امکان کے اعداد و شمار کے بغیر۔)" if backup else ""
     if not windows:
-        return Part("weather", f"No safe spray window was found in {name_en} in the next 5 days (wind, rain or heat).",
-                    f"{name_ur} میں اگلے پانچ دنوں میں سپرے کا کوئی محفوظ وقت نہیں ملا (ہوا، بارش یا گرمی کی وجہ سے)۔", {"windows": []})
+        return Part("weather", f"No safe spray window was found in {name_en} in the next 5 days (wind, rain or heat)." + note_en,
+                    f"{name_ur} میں اگلے پانچ دنوں میں سپرے کا کوئی محفوظ وقت نہیں ملا (ہوا، بارش یا گرمی کی وجہ سے)۔" + note_ur, {"windows": [], "source": source})
     en = "; ".join(fmt_window(w, "en") for w in windows)
     ur = "؛ ".join(fmt_window(w, "ur") for w in windows)
     return Part(
         "weather",
-        f"Safe spray windows in {name_en} over the next 5 days: {en}. These limits are rules of thumb, not official advice; check the product label for its rain-free time.",
-        f"{name_ur} میں اگلے پانچ دنوں میں سپرے کے محفوظ اوقات: {ur}۔ یہ حدیں عام اصول ہیں، سرکاری مشورہ نہیں؛ دوا کے لیبل پر بارش سے محفوظ رہنے کا وقت ضرور دیکھیں۔",
-        {"windows": windows},
+        f"Safe spray windows in {name_en} over the next 5 days: {en}. These limits are rules of thumb, not official advice; check the product label for its rain-free time." + note_en,
+        f"{name_ur} میں اگلے پانچ دنوں میں سپرے کے محفوظ اوقات: {ur}۔ یہ حدیں عام اصول ہیں، سرکاری مشورہ نہیں؛ دوا کے لیبل پر بارش سے محفوظ رہنے کا وقت ضرور دیکھیں۔" + note_ur,
+        {"windows": windows, "source": source},
     )
 
 
