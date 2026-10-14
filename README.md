@@ -54,6 +54,7 @@ flowchart TD
 | Agronomy RAG agent | Cited treatment from advisories + registered-pesticide list | Embeddings + Chroma |
 | `GET /market`, `GET /market/options` | Monthly retail prices (WFP, 5 cities, 8 staples) with a 3-month forecast, a range from past forecast errors, and a sell/hold signal that only appears when the whole range points one way. Mostly says "no clear signal", honestly | `backend/forecast/` |
 | `POST /field-ndvi` | Real Sentinel-2 satellite pictures of a pin (no account needed): greenness (NDVI) on each clear day for a year, a picture of the patch, whether it looks even or patchy, and a rough comparison with last year. Shows *what*, never *why* | `backend/data_sources/sentinel.py` |
+| `GET /status` | Live check of every outside service the API depends on (weather, satellite catalogue, price data, models), with the HTTP status or error for any that fails. Cached for 60 s | `backend/app/status.py` |
 | `POST /ask` | The supervisor router: reads a question in English, Roman Urdu or Urdu script, decides which specialist(s) should answer (weather, market, satellite field check, diagnosis), runs them, and replies in English and Urdu. A pesticide or dose question is always refused, and no data service is called | `backend/router/` |
 | Safety guardrail | Blocks unregistered/banned chemicals; dose and PPE only from sources | Rules + red-team eval |
 | Field agent | Sentinel-2 NDVI history for the farmer's plot | Copernicus |

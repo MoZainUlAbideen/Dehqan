@@ -110,4 +110,51 @@ def test_fetch_forecast_raises_on_http_error():
     open_meteo._cache.clear()
     client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(500)))
     with pytest.raises(httpx.HTTPStatusError):
-        fetch_forecast(10.0, 10.0, client=client)
+        fetch_forecast(10.0, 10.0, client=client, sleep=lambda s: None)
+
+
+# ---------- retries and honest logging when the weather service misbehaves ----------
+def test_a_brief_rate_limit_is_retried_and_then_succeeds():
+    open_meteo._cache.clear()
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        if len(calls) < 3:
+            return httpx.Response(429, json={"error": True, "reason": "Too many requests"})
+        return httpx.Response(200, json=json.loads(FIXTURE.read_text()))
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    pauses = []
+    hours = fetch_forecast(34.0, 71.5, client=client, sleep=pauses.append)
+    assert len(hours) == 120 and len(calls) == 3 and len(pauses) == 2 and pauses[1] > pauses[0]
+    open_meteo._cache.clear()
+
+
+def test_it_gives_up_after_the_retries_and_the_log_says_why(caplog):
+    open_meteo._cache.clear()
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(429, json={"reason": "Too many requests from this IP"})))
+    with caplog.at_level("WARNING", logger="dehqan.open_meteo"), pytest.raises(httpx.HTTPStatusError):
+        fetch_forecast(11.0, 11.0, client=client, sleep=lambda s: None)
+    messages = " ".join(r.getMessage() for r in caplog.records)
+    assert "HTTP 429" in messages and "Too many requests from this IP" in messages and "attempt 3/3" in messages
+
+
+def test_a_client_error_is_not_retried():
+    open_meteo._cache.clear()
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(400, json={"reason": "bad coordinates"})
+
+    with pytest.raises(httpx.HTTPStatusError):
+        fetch_forecast(12.0, 12.0, client=httpx.Client(transport=httpx.MockTransport(handler)), sleep=lambda s: None)
+    assert len(calls) == 1
+
+
+def test_a_response_of_the_wrong_shape_is_reported_as_a_value_error_after_retry_free_failure():
+    open_meteo._cache.clear()
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(200, json={"error": True, "reason": "oops"})))
+    with pytest.raises(ValueError):
+        fetch_forecast(13.0, 13.0, client=client, sleep=lambda s: None)

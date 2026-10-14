@@ -80,3 +80,17 @@ above is the safer choice.)
 
 The accuracy page uses the committed copies in `frontend/data/evals/` (a deploy rooted at `frontend/` cannot see
 `../evals`). After re-running an evaluation, run `npm run sync-evals` in `frontend/` and commit the result.
+
+## Troubleshooting a live deploy
+
+**The website shows "This feature is not available on the server yet".** The website (Vercel) is newer than the API (Render).
+Check `https://<your-service>.onrender.com/openapi.json`: it must list `/ask`, `/market`, `/field-ndvi`. If it does not,
+Render has not deployed the latest commit. In the Render dashboard open the service, then **Events**: see whether the latest
+deploy failed (open its log), or was never triggered (**Manual Deploy → Deploy latest commit**; also check
+Settings → Build & Deploy → Auto-Deploy is "On Commit"). A failed deploy leaves the previous version running.
+
+**An answer says "weather service unavailable".** Open `https://<your-service>.onrender.com/status`. It names the failing service
+with its HTTP status or error (for example a 429 rate limit from the weather service, which can happen when many apps share
+a host's IP address). The service log also records each failed attempt with its reason, and weather calls retry twice first.
+
+**Quick health checklist:** `/health` (models loaded?), `/status` (outside services reachable?), `/openapi.json` (which routes exist).

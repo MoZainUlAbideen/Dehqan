@@ -52,6 +52,10 @@ async function parse<T>(res: Response): Promise<T> {
     } catch {
       /* keep the generic message */
     }
+    if (res.status === 404 && detail === "Not Found") {
+      // The route itself is missing: the website is newer than the server it talks to (e.g. the server is still updating).
+      detail = "This feature is not available on the server yet. It may still be updating; please try again later.";
+    }
     throw new ApiError(detail, res.status);
   }
   return res.json() as Promise<T>;

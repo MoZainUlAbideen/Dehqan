@@ -43,6 +43,7 @@ _Last updated: 2026-10-14_
   - [ ] WhatsApp sandbox
 - [ ] **M7 — LLMOps**
   - [x] CI workflow + eval gate over committed results (tests/test_eval_gate.py); proven to fail when a number regresses
+  - [x] Operational visibility: GET /status (live dependency check with reasons), log lines that say why an outside call failed, weather retries on 429/5xx, friendly 'not available on the server yet' message in the site
   - [ ] Langfuse tracing (needs account keys), drift monitoring, nightly data refresh
 
 ## Session log

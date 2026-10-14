@@ -11,6 +11,7 @@ Settings (environment variables):
 """
 
 import io
+import logging
 import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
@@ -27,11 +28,15 @@ from app.ratelimit import RateLimiter
 from app.spray_window import NOTE as SPRAY_NOTE
 from app.spray_window import find_windows
 from data_sources.open_meteo import Hour, fetch_forecast
+from app import status as dependency_status
 from app.field_service import field_report
 from forecast import service as market_service
 from router.core import Agents
 from router.core import ask as router_ask
 from vision.severity import grade
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("dehqan")
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 MAX_SIDE_PX = 1024
@@ -114,6 +119,11 @@ def create_app(
     def health():
         return {"status": "ok", "models_loaded": app.state.components is not None}
 
+    @app.get("/status")
+    def status():
+        """Live check of every outside service the API depends on, with the reason for any failure."""
+        return dependency_status.check(models_loaded=app.state.components is not None)
+
     @app.get("/about")
     def about():
         return {
@@ -139,6 +149,7 @@ def create_app(
         try:
             hours = forecast_fn(req.lat, req.lon)
         except (httpx.HTTPError, ValueError) as e:
+            log.error("spray-window: weather lookup failed: %s: %s", type(e).__name__, str(e)[:200])
             raise HTTPException(502, "weather service unavailable; try again later") from e
         windows = find_windows(hours)
         return {
