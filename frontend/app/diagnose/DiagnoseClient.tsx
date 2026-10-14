@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import SeverityGauge from "@/components/SeverityGauge";
 import { ApiError, diagnose, type DiagnosisResult } from "@/lib/api";
 import { prettyLabel } from "@/lib/labels";
+import { useSlowHint, WAKING_MESSAGE } from "@/lib/useSlowHint";
 
 type State =
   | { kind: "idle" }
@@ -19,6 +20,7 @@ export default function DiagnoseClient() {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [dragging, setDragging] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const slow = useSlowHint(state.kind === "loading");
 
   const previewRef = useRef<string | null>(null);
   useEffect(() => () => {
@@ -100,6 +102,7 @@ export default function DiagnoseClient() {
             {state.kind === "loading" ? "Looking at your leaf…" : "Diagnose"}
           </button>
         </div>
+        {slow && <p role="status" className="mt-3 rounded-lg border border-gold/50 bg-gold-soft p-3 text-sm">{WAKING_MESSAGE}</p>}
         <p className="mt-3 text-xs text-ink-3">Your photo is sent to the Dehqan server for analysis and is not stored.</p>
       </div>
 

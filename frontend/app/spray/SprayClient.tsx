@@ -6,6 +6,7 @@ import PakistanMap from "@/components/PakistanMap";
 import SprayTimeline from "@/components/SprayTimeline";
 import { ApiError, sprayWindow, type SprayResponse } from "@/lib/api";
 import { CITIES, cityById } from "@/lib/cities";
+import { useSlowHint, WAKING_MESSAGE } from "@/lib/useSlowHint";
 
 const fmtTime = (iso: string) => iso.slice(11, 16);
 const fmtDay = (iso: string) =>
@@ -33,6 +34,8 @@ export default function SprayClient() {
   // Until the result for THIS city arrives, we are loading (derived, so no setState inside the effect).
   const state: Outcome | { kind: "loading" } = settled && settled.cityId === city.id ? settled.outcome : { kind: "loading" };
 
+  const slow = useSlowHint(state.kind === "loading");
+
   return (
     <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <div>
@@ -55,6 +58,7 @@ export default function SprayClient() {
           {city.name} <span className="font-urdu text-xl text-ink-3" lang="ur" dir="rtl">{city.urdu}</span>
         </h2>
         {state.kind === "loading" && <p className="mt-4 text-ink-3">Reading the forecast…</p>}
+        {slow && <p role="status" className="mt-3 rounded-lg border border-gold/50 bg-gold-soft p-3 text-sm">{WAKING_MESSAGE}</p>}
         {state.kind === "error" && (
           <p role="alert" className="mt-4 rounded-lg border border-bad/40 bg-surface-2 p-4 text-bad">{state.message}</p>
         )}

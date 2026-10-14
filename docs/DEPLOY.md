@@ -2,8 +2,8 @@
 
 Backend on **Render** (free web service), website on **Vercel**, model files on the **Hugging Face Hub**.
 
-> **Status: prepared, not deployed.** The Dockerfile has never been built (the Docker engine was not running on
-> the dev PC) and Render has never run this repo. Expect to read the first build log and fix small things.
+> **Status: backend deployed and verified at https://dehqan.onrender.com; website not yet on Vercel.** The Docker
+> image builds on Render. Measured there: about 2 s per diagnosis, warm.
 
 ## Why the backend runs on ONNX, not PyTorch
 
@@ -20,8 +20,8 @@ closely the ONNX models match the PyTorch ones (results in the README and `evals
 
 ## Expectations on Render's free plan
 
-- **Slow:** the free plan gives a small slice of one CPU. A diagnosis takes 0.2 s on the dev PC's full CPU, so
-  expect several seconds on Render. This has not been measured there.
+- **Slower than a laptop:** a diagnosis takes 0.2 s on the dev PC's full CPU and about 2 s end to end on Render
+  (measured over 5 requests from Pakistan, network included).
 - **Sleeps after ~15 minutes without traffic.** The first request after a nap takes roughly a minute while the
   service wakes. The model files are baked into the image, so there is no download on wake-up.
 - The in-memory rate limit (10 per minute per IP) is per instance and resets on restart.
@@ -73,7 +73,8 @@ above is the safer choice.)
 
 1. vercel.com → **Add New → Project** → import the GitHub repo.
 2. **Root Directory: `frontend`**. Framework: Next.js (auto-detected).
-3. Environment variable: `NEXT_PUBLIC_API_URL` = `https://<your-service>.onrender.com`
+3. No environment variable needed: production builds default to `https://dehqan.onrender.com`. (To use a different
+   backend, set `NEXT_PUBLIC_API_URL`.)
 4. Deploy. Optionally restrict CORS afterwards (step 2.3).
 
 The accuracy page uses the committed copies in `frontend/data/evals/` (a deploy rooted at `frontend/` cannot see

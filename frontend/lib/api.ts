@@ -1,5 +1,9 @@
 // Typed client for the Dehqan FastAPI backend.
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+// Local development talks to a local backend. Production builds default to the deployed Render API, so Vercel needs
+// no environment variable; set NEXT_PUBLIC_API_URL to point somewhere else.
+const PRODUCTION_API = "https://dehqan.onrender.com";
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === "production" ? PRODUCTION_API : "http://127.0.0.1:8000");
 
 export type DiagnosisResult = {
   status: "not_a_crop" | "uncertain" | "diagnosis";

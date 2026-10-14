@@ -34,8 +34,10 @@ _Last updated: 2026-10-14_
   - [x] Deploy target chosen: Hugging Face Spaces (Docker) + Vercel. Render free (512 MB) cannot hold torch + CLIP (CLIP file alone is 605 MB)
   - [x] Prepared: GitHub Actions CI (runtime-only install, no PyTorch), backend/Dockerfile (bakes model files in; untested build), render.yaml (untested), model fetch from HF Hub (4 tests), docs/DEPLOY.md for Render + Vercel
   - [x] USER: weights uploaded to HF Hub (MoZainUlAbideen/Dehqan); startup download verified against it (identical files)
-  - [ ] USER: upload data/models/onnx/ (5 files, NOT clip_vision.onnx) to the HF model repo, create the Render web service (Docker, root dir backend, free), deploy frontend on Vercel (docs/DEPLOY.md)
-  - [ ] Measure latency on Render's free CPU; verify the first real Render build
+  - [x] USER: ONNX files uploaded to the HF model repo; Render service created (free, Docker, root dir backend). First build failed with a 404 because the files were not uploaded yet; after uploading, it succeeded
+  - [x] Live API verified: https://dehqan.onrender.com : /health models_loaded true; diagnose ~1.8-2.7 s warm (from Pakistan); identical gate score to local; rejects non-crop and bad uploads; CORS * ; website built against it and checked
+  - [x] Frontend: production build defaults to the Render URL (no Vercel env var needed); 'server is waking up' hint after 6 s for the sleeping free tier
+  - [ ] USER: deploy frontend on Vercel (Root Directory frontend)
   - [ ] Verify the first real Space build and fix what breaks
   - [ ] WhatsApp sandbox
 - [ ] **M7 — LLMOps**

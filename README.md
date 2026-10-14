@@ -4,6 +4,8 @@
 
 A farmer sends a voice note (Urdu / Pashto / Punjabi) and a photo of a sick leaf. Dehqan diagnoses the problem, grades how severe it is, recommends **only pesticides registered in Pakistan** with dose and safety gear taken from cited official advisories, checks the field from satellite, finds a safe spray window from the weather forecast, suggests whether to sell or hold at the mandi, and answers as a **spoken voice note** in the farmer's language.
 
+> **Live API: https://dehqan.onrender.com** (`/health`, `/docs`). Free hosting: it sleeps after ~15 minutes idle, so the first request can take up to a minute; a diagnosis then takes about 2 seconds.
+>
 > **Status: work in progress. Milestones 1 and 2 are done, and there is a working API and website; the pesticide-advice, voice, satellite and market parts are not built.** This README separates what is **built and measured** from what is **planned**. Nothing in the "Built" section is aspirational.
 
 ---
@@ -260,7 +262,7 @@ How: `vision/export_onnx.py` exports the classifier and segmenter, exports only 
 
 Gate accuracy on ONNX: accepts **99.8%** of leaf photos and wrongly accepts **1.0%** of non-crop photos (AUROC 0.9992), against 99.6% / 1.0% (AUROC 0.9997) on PyTorch. The 0.2-point difference in accepted leaves is one photo, i.e. noise; the slightly lower AUROC is the cost of quantisation. All model evaluations above (accuracy, abstention, severity) were measured with PyTorch; the parity table is the evidence that the deployed models behave the same.
 
-**Not yet measured:** speed on Render's free CPU (a small slice of one core, so expect several seconds per photo), and the Docker build itself.
+**On Render's free CPU** a diagnosis takes about **2 seconds** end to end as seen from Pakistan (5 consecutive requests: 1.8 to 2.7 s, including the network), and the live service returned the same gate score as the local one, to the last digit.
 
 ### "Not a crop" gate (zero-shot CLIP)
 
@@ -293,7 +295,7 @@ These apply to every model in this repo:
 - [ ] **M3 Agronomy RAG + safety:** cited answers, registered-pesticide guardrail, red-team suite. *Started: guardrail logic and tests done; blocked on obtaining the official registered/banned lists and advisory PDFs.*
 - [ ] **M4 Voice:** Urdu + Pashto ASR/TTS, WER eval
 - [ ] **M5 Field / weather / market agents + supervisor router.** *Weather agent done (spray windows); satellite, market and the supervisor router not started.*
-- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API, rate limiting, website, CI workflow, a PyTorch-free ONNX backend, Dockerfile and a step-by-step guide ([docs/DEPLOY.md](docs/DEPLOY.md)) are done. The deploy itself (Render + Vercel) has not been done, and the Docker image was never built locally.*
+- [ ] **M6 Live product:** Render backend, Vercel frontend, WhatsApp sandbox, rate limits. *API deployed on Render (free) and verified live; website built and checked against it, Vercel deploy pending. CI workflow, PyTorch-free ONNX backend and a step-by-step guide ([docs/DEPLOY.md](docs/DEPLOY.md)) are done.*
 - [ ] **M7 LLMOps:** Langfuse, CI eval gate, drift monitoring, nightly refresh
 
 Fallback scope if time is tight: 2 crops (wheat, cotton), 2 languages (Urdu, Pashto), 1 mandi region.
