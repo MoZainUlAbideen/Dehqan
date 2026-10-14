@@ -97,7 +97,7 @@ export default function DiagnoseClient() {
             type="button"
             onClick={run}
             disabled={!file || state.kind === "loading"}
-            className="rounded-lg bg-green px-5 py-2 font-semibold text-green-ink disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-primary rounded-lg px-5 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-50"
           >
             {state.kind === "loading" ? "Looking at your leaf…" : "Diagnose"}
           </button>

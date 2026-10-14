@@ -152,8 +152,8 @@ export function CoverageChart({
 /** One headline number with a short label. */
 export function Stat({ value, label, sub }: { value: string; label: string; sub?: string }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface-2 p-5">
-      <p className="font-display text-4xl font-semibold tracking-tight text-green">{value}</p>
+    <div className="card-lift rounded-2xl border border-line bg-surface-2 p-5">
+      <p className="gradient-text font-display text-4xl font-semibold tracking-tight">{value}</p>
       <p className="mt-1 text-sm font-medium text-ink">{label}</p>
       {sub && <p className="mt-1 text-xs text-ink-3">{sub}</p>}
     </div>

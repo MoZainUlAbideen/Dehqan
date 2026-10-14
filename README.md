@@ -86,7 +86,7 @@ An end-to-end slice you can run locally (see "Run it"):
 | `POST /diagnose` | Photo in; checks it is a leaf (CLIP), names a likely condition or says "not sure", and estimates severity. Always returns `limitations` for the UI to show | `backend/app/` |
 | `POST /spray-window` | Live 5-day Open-Meteo forecast in; low-wind, dry, mild-weather hours out (thresholds are rules of thumb, and the response says so) | `backend/app/spray_window.py` |
 | Safety guardrail | Rejects banned or unregistered pesticides and any dose not quoted verbatim from a cited source. Not yet wired to the API: it has no pesticide data to work with | `backend/rag/guardrail.py` |
-| Website | Home, diagnose (upload or camera), spray window (map and hour-by-hour grid), and a "How we measured accuracy" page that reads the real eval files | `frontend/` |
+| Website | Home with an English and Urdu explanation and an animated map showing **real live weather** for 8 farming-region cities (Open-Meteo, refreshed every 10 minutes), diagnose (upload or camera), spray window (hour-by-hour grid), and a "How we measured accuracy" page that reads the real eval files | `frontend/` |
 
 Production safeguards in the API: upload type and size limits, photos downscaled before inference, per-IP rate limiting, CORS restricted to configured origins, and a 503 when models are not loaded. 72 backend tests pass, using fakes for the models and the weather service so they need no network.
 

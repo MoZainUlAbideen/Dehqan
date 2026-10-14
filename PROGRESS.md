@@ -37,6 +37,7 @@ _Last updated: 2026-10-14_
   - [x] USER: ONNX files uploaded to the HF model repo; Render service created (free, Docker, root dir backend). First build failed with a 404 because the files were not uploaded yet; after uploading, it succeeded
   - [x] Live API verified: https://dehqan.onrender.com : /health models_loaded true; diagnose ~1.8-2.7 s warm (from Pakistan); identical gate score to local; rejects non-crop and bad uploads; CORS * ; website built against it and checked
   - [x] Frontend: production build defaults to the Render URL (no Vercel env var needed); 'server is waking up' hint after 6 s for the sleeping free tier
+  - [x] Frontend redesign: more vivid emerald/gold theme, animated Pakistan map (pulsing city rings, scan sweep, flowing border, glow + hover cards with REAL live weather from Open-Meteo, live timestamp), English + Urdu explanation on the first screen, bilingual how-it-works, Urdu footer disclaimer. Checked in headless Edge at desktop and true 375 px width; hover and light mode not visually verified. Urdu text needs a native-speaker review
   - [ ] USER: deploy frontend on Vercel (Root Directory frontend)
   - [ ] Verify the first real Space build and fix what breaks
   - [ ] WhatsApp sandbox
