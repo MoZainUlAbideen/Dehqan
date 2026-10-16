@@ -30,6 +30,7 @@ COPY --chown=user app ./app
 COPY --chown=user data_sources ./data_sources
 COPY --chown=user forecast ./forecast
 COPY --chown=user router ./router
+COPY --chown=user rag ./rag
 COPY --chown=user vision ./vision
 
 # Bake the model files into the image: Render's free disk is wiped on every wake-up, so downloading at start

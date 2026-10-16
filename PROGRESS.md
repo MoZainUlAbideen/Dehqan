@@ -57,3 +57,4 @@ _Last updated: 2026-10-14_
 - 2026-10-14 (night): Render log showed libexpat crash; Dockerfile fixed; freed 5.3 GB on C: (Dehqan dataset caches only); Docker Desktop shut down.
 - 2026-10-14 (night): live Render verified: market, ask, diagnose, satellite (14 s) work; weather 502 from Open-Meteo 429 -> backup source built.
 - 2026-10-16: Urdu spoken-style clock times (user feedback); backup-source span wording fixed.
+- 2026-10-16: Pesticide advice v1: cotton options parsed from the official Punjab bulletin (rag/advisories.py, GET /advice), each dose a verbatim cited line, passed through the guardrail. 246 tests. Not done: registered-list check (DPP site unreachable), PPE (bulletin has none), wheat treatment (bulletin has no table).

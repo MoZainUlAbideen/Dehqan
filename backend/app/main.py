@@ -32,6 +32,7 @@ from data_sources.open_meteo import Hour, fetch_forecast
 from app import status as dependency_status
 from app.field_service import field_report
 from forecast import service as market_service
+from rag import advisories
 from router.core import Agents
 from router.core import ask as router_ask
 from vision.severity import grade
@@ -195,6 +196,12 @@ def create_app(
             return field_fn(req.lat, req.lon, req.size_m)
         except (httpx.HTTPError, OSError) as e:
             raise HTTPException(502, "satellite data service unavailable; try again later") from e
+
+    @app.get("/advice")
+    def advice(crop: str, pest: str) -> dict:
+        """Pesticide options for a pest, copied from the official Punjab bulletin with the printed line as citation."""
+        entries, texts, meta = advisories.load()
+        return advisories.advise(crop, pest, entries, texts, meta)
 
     @app.get("/market/options")
     def market_options():

@@ -226,3 +226,13 @@ def test_ask_502_when_a_data_service_fails_and_is_rate_limited(monkeypatch):
     monkeypatch.setenv("DEHQAN_ASK_PER_MIN", "2")
     c = client()
     assert [c.post("/ask", json={"text": "hello"}).status_code for _ in range(3)] == [200, 200, 429]
+
+
+def test_advice_endpoint_returns_cited_options_and_disclosures():
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    c = TestClient(create_app())
+    r = c.get("/advice", params={"crop": "cotton", "pest": "whitefly"}).json()
+    assert r["available"] and all(o["quote"] and o["url"] for o in r["options"])
+    assert any("registered-pesticide list" in n for n in r["notes"])
+    assert not c.get("/advice", params={"crop": "cotton", "pest": "dragon"}).json()["available"]
