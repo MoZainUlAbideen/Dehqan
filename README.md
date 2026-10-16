@@ -170,6 +170,22 @@ Per-class recall: Leaf Redding 98%, Curl Virus 98%, Leaf Variegation 96%, Health
 - **The 82% same-source number is probably optimistic.** Photos from the same plants and sessions likely land on both sides of the split. Treat it as an upper bound.
 - This is the same lab-to-field pattern as the baseline above, now on cotton: a model that scores well on its own data does not carry over to new cameras and fields. Fixing it (stronger augmentation, training on mixed sources, confidence-based abstention) is the rest of Milestone 2.
 
+
+### Wheat: trained and measured, but not good enough to ship
+
+`vision/train_wheat.py` fine-tunes the same MobileNetV3-Small on 999 field photos from the John Innes Centre (UK; Zenodo 7573133, CC-BY-4.0): brown rust, yellow rust, septoria, mildew, healthy (799 train, 200 test). The "new camera" test uses a separate Chinese wheat set (Ma et al. 2024, Zenodo 15621359, CC-BY-4.0): 334 crops cut from its test split, covering 4 of the 5 classes (it has no septoria). Results: `evals/wheat_cross_source.json`.
+
+| Test | Accuracy | Dumb baseline | Chance |
+|---|---|---|---|
+| Held-out JIC photos (5 classes) | 66.0% | 35.0% | 20% |
+| Other source, strict 5-way | 34.4% | | 20% |
+| Other source, shared 4 classes only | 49.4% | 31.7% | 25% |
+
+- It beats the baseline everywhere, but **it does not work on new cameras**: half of the other-source crops are wrong. Yellow rust carries over (94% recall); healthy (15%) and mildew (24%) do not.
+- Even on its own source it reaches only 66%, so these are hard photos, and the model is small and trained for 4 epochs.
+- The JIC file names do not say which photos share a plant or day, so even the 66% may be flattering.
+- The other source is box crops from a detection set, a different protocol from whole-leaf photos, so the shift is partly the photo style, not only the camera.
+- **Not deployed.** The live app still does not diagnose wheat. Next steps: stronger augmentation, training on both sources, abstention.
 ### Abstention: saying "I'm not sure"
 
 `vision/abstention.py` answers only when the model's top softmax probability is above a threshold, otherwise Dehqan defers to the extension office. `vision/eval_abstention.py` measures the trade-off on the cotton model (`evals/abstention_cotton.json`). *Coverage* is the share of photos answered, and *selective accuracy* is accuracy on only those.

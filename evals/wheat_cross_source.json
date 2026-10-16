@@ -1,0 +1,57 @@
+{
+  "model": "mobilenet_v3_small (ImageNet-pretrained, fully fine-tuned)",
+  "train_data": "JIC wheat photos (Long et al. 2023, Zenodo 7573133), stratified split",
+  "cross_source_data": "Ma et al. 2024 wheat detection set (Zenodo 15621359), test-split box crops",
+  "config": {
+    "epochs": 4,
+    "batch_size": 32,
+    "test_fraction": 0.2,
+    "max_per_class": null,
+    "seed": 0,
+    "n_train": 799
+  },
+  "same_source_test": {
+    "n_images": 200,
+    "accuracy": 0.66,
+    "macro_f1": 0.6441,
+    "majority_baseline_accuracy": 0.35,
+    "per_class_recall": {
+      "brown_rust": 0.6154,
+      "healthy": 0.375,
+      "mildew": 0.4688,
+      "septoria": 0.7286,
+      "yellow_rust": 0.8542
+    }
+  },
+  "cross_source_test": {
+    "n_images": 334,
+    "images_per_class": {
+      "brown_rust": 106,
+      "healthy": 66,
+      "mildew": 99,
+      "yellow_rust": 63
+    },
+    "classes_covered": [
+      "brown_rust",
+      "healthy",
+      "mildew",
+      "yellow_rust"
+    ],
+    "strict_5way": {
+      "accuracy": 0.3443,
+      "macro_f1": 0.3666
+    },
+    "shared_only_4way": {
+      "accuracy": 0.494,
+      "macro_f1": 0.4446,
+      "chance_accuracy": 0.25,
+      "majority_baseline_accuracy": 0.3174
+    },
+    "per_class_recall_shared_only": {
+      "brown_rust": 0.6792,
+      "healthy": 0.1515,
+      "mildew": 0.2424,
+      "yellow_rust": 0.9365
+    }
+  }
+}
