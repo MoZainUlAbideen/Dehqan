@@ -50,16 +50,16 @@ class RangeFile(io.RawIOBase):
         return len(data)
 
 
-def main() -> None:
+def main(class_ids: dict[int, str] = CLASS_IDS, out=OUT, max_per_class: int = MAX_PER_CLASS) -> None:
     z = zipfile.ZipFile(io.BufferedReader(RangeFile(URL), 1 << 20))
     labels = [n for n in z.namelist() if n.startswith("xiaomai/labels/test/") and n.endswith(".txt")]
-    counts = {name: 0 for name in CLASS_IDS.values()}
+    counts = {name: 0 for name in class_ids.values()}
     for ln in sorted(labels):
         boxes = []
         for row in z.read(ln).decode().splitlines():
             parts = row.split()
-            if len(parts) >= 5 and int(parts[0]) in CLASS_IDS and counts[CLASS_IDS[int(parts[0])]] < MAX_PER_CLASS:
-                boxes.append((CLASS_IDS[int(parts[0])], *map(float, parts[1:5])))
+            if len(parts) >= 5 and int(parts[0]) in class_ids and counts[class_ids[int(parts[0])]] < max_per_class:
+                boxes.append((class_ids[int(parts[0])], *map(float, parts[1:5])))
         if not boxes:
             continue
         stem = ln.rsplit("/", 1)[1][:-4]
@@ -70,9 +70,9 @@ def main() -> None:
         W, H = img.size
         for i, (name, xc, yc, w, h) in enumerate(boxes):
             x0, y0, x1, y1 = int((xc - w / 2) * W), int((yc - h / 2) * H), int((xc + w / 2) * W), int((yc + h / 2) * H)
-            if min(x1 - x0, y1 - y0) < MIN_SIDE or counts[name] >= MAX_PER_CLASS:
+            if min(x1 - x0, y1 - y0) < MIN_SIDE or counts[name] >= max_per_class:
                 continue
-            d = OUT / name
+            d = out / name
             d.mkdir(parents=True, exist_ok=True)
             img.crop((x0, y0, x1, y1)).save(d / f"{stem}_{i}.jpg", quality=92)
             counts[name] += 1
@@ -81,4 +81,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    if "--ears" in sys.argv:   # wheat ear crops: only used to test the crop recogniser (they are not a disease class)
+        main({5: "wheat_ear"}, DATA_DIR / "wheat_ears", 60)
+    else:
+        main()

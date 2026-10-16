@@ -59,3 +59,4 @@ _Last updated: 2026-10-14_
 - 2026-10-16: Urdu spoken-style clock times (user feedback); backup-source span wording fixed.
 - 2026-10-16: Pesticide advice v1: cotton options parsed from the official Punjab bulletin (rag/advisories.py, GET /advice), each dose a verbatim cited line, passed through the guardrail. 246 tests. Not done: registered-list check (DPP site unreachable), PPE (bulletin has none), wheat treatment (bulletin has no table).
 - 2026-10-16: Wheat classifier trained (JIC photos) and tested on a second source: 66.0% same-source, 49.4% cross-source (baseline 31.7%). Honest result: not good enough to deploy. evals/wheat_cross_source.json.
+- 2026-10-16: When the classifier abstains, a zero-shot CLIP crop hint says e.g. 'This might be wheat ears. I cannot diagnose that crop yet' (vision/crop_id.py). Measured 47.7% correct over 5 crop sets, so wording is hedged. Footer now mentions cotton pesticide advice. 250 tests.

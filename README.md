@@ -171,6 +171,14 @@ Per-class recall: Leaf Redding 98%, Curl Virus 98%, Leaf Variegation 96%, Health
 - This is the same lab-to-field pattern as the baseline above, now on cotton: a model that scores well on its own data does not carry over to new cameras and fields. Fixing it (stronger augmentation, training on mixed sources, confidence-based abstention) is the rest of Milestone 2.
 
 
+### Naming the crop when the disease model is unsure
+
+A farmer sent a photo of wheat ears and got a bare "I'm not sure". `vision/crop_id.py` now helps: only when the classifier abstains, CLIP (zero-shot, no training; the prompt embeddings are a 16 KB committed file) guesses the crop, and if it is sure enough (60%) and the crop is one we do not cover, the reply says "This might be wheat ears. I cannot diagnose that crop yet, so I will not guess." It never diagnoses anything. `vision/eval_crop_id.py` measures it on 300 photos with known crops (`evals/crop_id.json`).
+
+- **It is a weak recogniser: 47.7% correct overall** (chance 20%). Per crop: cotton 65%, wheat leaves 58%, maize 42%, wheat ears 38%, vegetables/fruit 35%. About a third of photos get "unsure" (no crop named), and some are wrong: 30% of maize photos were called wheat leaves, 25% of the wheat-ear crops maize, and 18% of PlantDoc vegetable/fruit photos cotton.
+- So the wording is hedged ("might be") and the hint only appears after the disease model has already declined to answer.
+- The wheat-ear test set is small crops cut from a detection set, so it is only a rough guide. On the farmer's real photo it said wheat ears with 93%.
+
 ### Wheat: trained and measured, but not good enough to ship
 
 `vision/train_wheat.py` fine-tunes the same MobileNetV3-Small on 999 field photos from the John Innes Centre (UK; Zenodo 7573133, CC-BY-4.0): brown rust, yellow rust, septoria, mildew, healthy (799 train, 200 test). The "new camera" test uses a separate Chinese wheat set (Ma et al. 2024, Zenodo 15621359, CC-BY-4.0): 334 crops cut from its test split, covering 4 of the 5 classes (it has no septoria). Results: `evals/wheat_cross_source.json`.

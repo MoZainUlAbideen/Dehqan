@@ -145,7 +145,7 @@ def create_app(
         data = await file.read(MAX_UPLOAD_BYTES + 1)
         img = read_image(data, file.content_type)
         c = app.state.components
-        return asdict(diagnose(img, c.gate, c.classifier, c.severity, grade))
+        return asdict(diagnose(img, c.gate, c.classifier, c.severity, grade, crop_hint=c.crop_hint))
 
     @app.post("/spray-window")
     def spray_window(req: SprayRequest):

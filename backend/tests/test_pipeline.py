@@ -51,7 +51,7 @@ def test_boundary_values_are_inclusive_for_answering():
 
 def test_every_answered_result_says_no_treatment_advice_yet():
     result, _ = run()
-    assert any("Treatment advice is not available" in x for x in result.limitations)
+    assert any("Treatment advice exists only for cotton" in x for x in result.limitations)
 
 
 def test_is_healthy_label():
@@ -60,3 +60,22 @@ def test_is_healthy_label():
 
 def test_result_is_a_plain_dataclass():
     assert isinstance(run()[0], DiagnosisResult)
+
+
+# ---------- crop hint: only used when the classifier abstains ----------
+def test_abstain_names_an_uncovered_crop_when_the_hint_is_confident():
+    result, _ = run(conf=0.5, crop_hint=lambda img: ("wheat ears", 0.8))
+    assert result.status == "uncertain" and result.detected_crop == "wheat ears" and result.label is None
+    assert "might be wheat ears" in result.message and "will not guess" in result.message and "extension office" in result.message
+
+
+def test_hint_is_ignored_when_unsure_other_or_a_covered_crop():
+    for hint in [("wheat ears", 0.5), ("other", 0.9), ("vegetable or fruit plant", 0.9), ("maize", 0.9)]:
+        result, _ = run(conf=0.5, crop_hint=lambda img, h=hint: h)
+        assert result.detected_crop is None and result.message.startswith("I am not sure what this is")
+
+
+def test_hint_never_runs_when_the_classifier_is_confident_or_the_photo_is_not_a_crop():
+    boom = lambda img: (_ for _ in ()).throw(AssertionError("hint must not run"))
+    assert run(conf=0.95, crop_hint=boom)[0].status == "diagnosis"
+    assert run(gate=0.1, crop_hint=boom)[0].status == "not_a_crop"

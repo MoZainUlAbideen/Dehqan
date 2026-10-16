@@ -27,7 +27,7 @@ def fake_components(gate=0.9, label="Tomato___Late_blight", conf=0.95, sev=0.2, 
             seen.append(img.size)
         return Prediction(label, conf)
 
-    return SimpleNamespace(gate=lambda img: gate, classifier=classifier, severity=lambda img: sev)
+    return SimpleNamespace(gate=lambda img: gate, classifier=classifier, severity=lambda img: sev, crop_hint=None)
 
 
 def _no_backup(lat, lon):
@@ -236,3 +236,10 @@ def test_advice_endpoint_returns_cited_options_and_disclosures():
     assert r["available"] and all(o["quote"] and o["url"] for o in r["options"])
     assert any("registered-pesticide list" in n for n in r["notes"])
     assert not c.get("/advice", params={"crop": "cotton", "pest": "dragon"}).json()["available"]
+
+
+def test_diagnose_response_names_an_uncovered_crop_when_unsure():
+    comps = fake_components(label="Tomato___healthy", conf=0.4)
+    comps.crop_hint = lambda img: ("wheat ears", 0.85)
+    r = post_image(client(components=comps)).json()
+    assert r["status"] == "uncertain" and r["detected_crop"] == "wheat ears"

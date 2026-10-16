@@ -13,3 +13,4 @@ class Components:
     gate: Callable[[Image.Image], float]
     classifier: Callable[[Image.Image], Prediction]
     severity: Callable[[Image.Image], float | None]
+    crop_hint: Callable[[Image.Image], tuple[str, float]] | None = None   # names the crop; used only when the classifier abstains

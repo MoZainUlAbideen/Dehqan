@@ -9,6 +9,8 @@ Every result carries `limitations`: honest caveats the farmer-facing UI must sho
 from dataclasses import dataclass, field
 from typing import Callable, Protocol
 
+from vision.crop_id import COVERED_CROPS, MIN_PROB
+
 GATE_THRESHOLD = 0.5
 
 # Measured on held-out PlantDoc field photos (evals/field_tuned.json). Picking the threshold on the same
@@ -40,12 +42,13 @@ class DiagnosisResult:
     severity: float | None = None       # 0..1, share of leaf covered by spots
     severity_grade: str | None = None
     limitations: list[str] = field(default_factory=list)
+    detected_crop: str | None = None    # set only when the classifier abstained and a crop we do not cover was recognised
 
 
 BASE_LIMITATIONS = [
     "Preliminary AI guess, not a confirmed diagnosis.",
     "The classifier knows 27 disease/healthy classes across 14 crops. Wheat and cotton are NOT covered.",
-    "Treatment advice is not available yet: official pesticide lists and advisories are not loaded.",
+    "Treatment advice exists only for cotton pests (copied from the Punjab Agriculture Department bulletin) and is not checked against the national registered-pesticide list.",
 ]
 SEVERITY_LIMITATION = "Severity was trained on apple, soybean and wheat photos only; treat it as rough."
 
@@ -62,6 +65,7 @@ def diagnose(
     grade: Callable[[float], str],
     gate_threshold: float = GATE_THRESHOLD,
     abstain_threshold: float = ABSTAIN_THRESHOLD,
+    crop_hint: Callable[[Image], tuple[str, float]] | None = None,
 ) -> DiagnosisResult:
     score = gate(image)
     if score < gate_threshold:
@@ -72,6 +76,13 @@ def diagnose(
 
     pred = classifier(image)
     if pred.confidence < abstain_threshold:
+        hint = crop_hint(image) if crop_hint else None
+        if hint and hint[1] >= MIN_PROB and hint[0] not in COVERED_CROPS and hint[0] != "other":
+            return DiagnosisResult(
+                status="uncertain", crop_score=score, confidence=pred.confidence, detected_crop=hint[0],
+                message=f"This might be {hint[0]}. I cannot diagnose that crop yet, so I will not guess. {EXTENSION_ADVICE}",
+                limitations=list(BASE_LIMITATIONS),
+            )
         return DiagnosisResult(
             status="uncertain", crop_score=score, confidence=pred.confidence,
             message=f"I am not sure what this is. {EXTENSION_ADVICE}",

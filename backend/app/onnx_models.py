@@ -16,6 +16,7 @@ from PIL import Image
 from app.components import Components
 from app.fetch_models import MODELS_DIR
 from app.pipeline import Prediction
+from vision.crop_id import identify_crop, load_prompts
 from vision.severity import severity_from_mask
 
 ONNX_DIR = MODELS_DIR / "onnx"
@@ -93,6 +94,12 @@ def load_components(onnx_dir: Path = ONNX_DIR) -> Components:
     text = np.load(onnx_dir / "clip_text.npy")
     clip, clf, seg = (_session(onnx_dir / n) for n in ("clip_vision_int8.onnx", "classifier.onnx", "severity.onnx"))
 
+    crop_prompts = load_prompts()
+
+    def crop_hint(img: Image.Image) -> tuple[str, float]:
+        emb = clip.run(None, {"input": prep_clip(img)})[0]
+        return identify_crop(emb, *crop_prompts)
+
     def gate(img: Image.Image) -> float:
         emb = clip.run(None, {"input": prep_clip(img)})[0]
         return leaf_score_from_embedding(emb, text, meta["clip_logit_scale"], meta["n_leaf_prompts"])
@@ -106,4 +113,4 @@ def load_components(onnx_dir: Path = ONNX_DIR) -> Components:
         logits = seg.run(None, {"input": prep_segmenter(img)})[0]
         return severity_from_mask(logits.argmax(1)[0].astype(np.uint8))
 
-    return Components(gate, classify, severity)
+    return Components(gate, classify, severity, crop_hint if crop_prompts else None)
