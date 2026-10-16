@@ -2,7 +2,9 @@ import re
 
 import pytest
 
-from router.core import Agents, ask, detect_intents, find_city, find_commodity, fmt_window
+from datetime import datetime
+
+from router.core import Agents, ask, detect_intents, find_city, find_commodity, fmt_window, urdu_clock, urdu_time_range
 from router.text import is_urdu, normalize
 
 WINDOW = {"start": "2026-10-15T05:00:00", "end": "2026-10-15T18:00:00", "hours": 14}
@@ -191,7 +193,7 @@ def test_answer_follows_the_language_of_the_question_and_both_are_always_present
 
 def test_window_formatting():
     assert fmt_window(WINDOW, "en") == "Thu 15 Oct 05:00-18:00"
-    assert fmt_window(WINDOW, "ur") == "جمعرات 15 اکتوبر، 05:00 سے 18:00 تک"
+    assert fmt_window(WINDOW, "ur") == "جمعرات 15 اکتوبر، صبح 5 بجے سے شام 6 بجے تک"
 
 
 # ---------- negation and spelling variants ----------
@@ -220,3 +222,32 @@ def test_no_signal_answer_states_the_range_itself_and_never_points_at_a_chart_th
     r, _ = run("sell wheat in Multan?", signal="none", beats=False)
     assert "between about 120 and 160" in r["answer_en"] and "below" not in r["answer_en"].lower()
     assert "120" in r["answer_ur"] and "160" in r["answer_ur"]
+
+
+# ---------- Urdu clock times: spoken style, not 24-hour digits ----------
+@pytest.mark.parametrize("hour,expected", [
+    (0, "رات 12 بجے"), (2, "رات 2 بجے"), (4, "صبح 4 بجے"), (5, "صبح 5 بجے"), (9, "صبح 9 بجے"), (11, "صبح 11 بجے"),
+    (12, "دوپہر 12 بجے"), (13, "دوپہر 1 بجے"), (14, "دوپہر 2 بجے"), (15, "سہ پہر 3 بجے"), (16, "سہ پہر 4 بجے"),
+    (17, "شام 5 بجے"), (18, "شام 6 بجے"), (19, "شام 7 بجے"), (20, "رات 8 بجے"), (23, "رات 11 بجے"),
+])
+def test_urdu_clock_uses_the_part_of_the_day_and_the_twelve_hour_clock(hour, expected):
+    period, clock = urdu_clock(datetime(2026, 10, 15, hour))
+    assert f"{period} {clock}" == expected
+
+
+def test_urdu_clock_half_hours_and_odd_minutes():
+    assert urdu_clock(datetime(2026, 10, 15, 7, 30)) == ("صبح", "ساڑھے 7 بجے")
+    assert urdu_clock(datetime(2026, 10, 15, 14, 45)) == ("دوپہر", "2:45 بجے")
+
+
+def test_urdu_time_range_reads_the_way_people_say_it():
+    t = lambda h: datetime(2026, 10, 16, h)
+    assert urdu_time_range(t(5), t(18)) == "صبح 5 بجے سے شام 6 بجے تک"        # different parts of the day: both named
+    assert urdu_time_range(t(5), t(9)) == "صبح 5 سے 9 بجے تک"                  # same part of the day: said once
+    assert urdu_time_range(t(13), t(14)) == "دوپہر 1 سے 2 بجے تک"
+    assert urdu_time_range(t(9), t(13)) == "صبح 9 بجے سے دوپہر 1 بجے تک"
+
+
+def test_no_24_hour_digits_remain_in_a_spoken_urdu_weather_answer():
+    r, _ = run("is it safe to spray tomorrow in Lahore?")
+    assert "05:00" not in r["answer_ur"] and "18:00" not in r["answer_ur"] and "بجے" in r["answer_ur"]

@@ -275,6 +275,7 @@ One text box in front of all the specialists. `router/` scores a question agains
 - **Pesticide questions: 7 of 7 on the test set (and 8 of 8 on dev) went to the refusal.** The CI gate requires 100%.
 - **The dev set shows 100% only because it was tuned on**; the test number is the honest one. Before tuning, the dev set scored 90%, the same as the test set.
 - **The 4 test misses:** three symptom descriptions with no disease word ("white powder on the leaves", "black marks on the leaves", "tomato leaves curling") get the "here is what I can help with" answer, never a wrong diagnosis; and "I will not spray today, I just want the price" also triggers the weather agent (negation is only handled for sell/hold words, and not in Urdu, where the negative comes after the verb).
+- **Urdu answers use spoken clock times**, as a farmer would say them: "صبح 5 بجے سے شام 6 بجے تک" (5 in the morning to 6 in the evening), with the part of the day (صبح, دوپہر, سہ پہر, شام, رات) and the 12-hour number, not "05:00 to 18:00". Suggested by a native speaker reviewing the first draft. The weather answer also no longer says "5 days" when the 2-day backup source is in use.
 - **Both sets are small and written by the person who wrote the router.** Real farmers will phrase things differently, so read these as an optimistic upper bound. The lexicon and all Urdu answer text need a native-speaker review.
 
 ### Satellite field check (NDVI)

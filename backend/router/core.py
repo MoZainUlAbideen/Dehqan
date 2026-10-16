@@ -109,10 +109,41 @@ def _when(iso: str) -> datetime:
     return datetime.fromisoformat(iso)
 
 
+def urdu_period(hour: int) -> str:
+    """The word Urdu speakers put before a clock time: صبح (morning), دوپہر (midday), سہ پہر (afternoon), شام (evening), رات (night)."""
+    if 4 <= hour <= 11:
+        return "صبح"
+    if 12 <= hour <= 14:
+        return "دوپہر"
+    if 15 <= hour <= 16:
+        return "سہ پہر"
+    if 17 <= hour <= 19:
+        return "شام"
+    return "رات"
+
+
+def urdu_clock(t: datetime) -> tuple[str, str]:
+    """(period word, 'N بجے') for a time, on the 12-hour clock: 18:00 -> ('شام', '6 بجے'). Half hours read 'ساڑھے N بجے'."""
+    h12 = t.hour % 12 or 12
+    if t.minute == 0:
+        return urdu_period(t.hour), f"{h12} بجے"
+    if t.minute == 30:
+        return urdu_period(t.hour), f"ساڑھے {h12} بجے"
+    return urdu_period(t.hour), f"{h12}:{t.minute:02d} بجے"
+
+
+def urdu_time_range(s: datetime, e: datetime) -> str:
+    """'صبح 5 بجے سے شام 6 بجے تک'; when both ends fall in the same part of the day: 'صبح 5 سے 9 بجے تک'."""
+    (p1, c1), (p2, c2) = urdu_clock(s), urdu_clock(e)
+    if p1 == p2 and s.minute == 0 and e.minute == 0:
+        return f"{p1} {s.hour % 12 or 12} سے {c2} تک"
+    return f"{p1} {c1} سے {p2} {c2} تک"
+
+
 def fmt_window(w: dict, lang: str) -> str:
     s, e = _when(w["start"]), _when(w["end"])
     if lang == "ur":
-        return f"{UR_DAYS[s.weekday()]} {s.day} {UR_MONTHS[s.month - 1]}، {s:%H:%M} سے {e:%H:%M} تک"
+        return f"{UR_DAYS[s.weekday()]} {s.day} {UR_MONTHS[s.month - 1]}، {urdu_time_range(s, e)}"
     return f"{EN_DAYS[s.weekday()]} {s.day} {EN_MONTHS[s.month - 1][:3]} {s:%H:%M}-{e:%H:%M}"
 
 
@@ -133,17 +164,18 @@ def weather_part(city: City | None, lat: float | None, lon: float | None, agents
     all_windows, source = agents.spray(lat, lon)
     windows = all_windows[:3]
     backup = source != "open-meteo"
+    span_en, span_ur = ("2", "دو") if backup else ("5", "پانچ")   # the backup source only covers about 2 days
     note_en = " (Backup weather source in use: about 2 days only, and no wind-gust or rain-probability data.)" if backup else ""
     note_ur = " (متبادل موسمی ذریعہ استعمال ہو رہا ہے: صرف تقریباً دو دن، اور ہوا کے جھکڑ یا بارش کے امکان کے اعداد و شمار کے بغیر۔)" if backup else ""
     if not windows:
-        return Part("weather", f"No safe spray window was found in {name_en} in the next 5 days (wind, rain or heat)." + note_en,
-                    f"{name_ur} میں اگلے پانچ دنوں میں سپرے کا کوئی محفوظ وقت نہیں ملا (ہوا، بارش یا گرمی کی وجہ سے)۔" + note_ur, {"windows": [], "source": source})
+        return Part("weather", f"No safe spray window was found in {name_en} in the next {span_en} days (wind, rain or heat)." + note_en,
+                    f"{name_ur} میں اگلے {span_ur} دنوں میں سپرے کا کوئی محفوظ وقت نہیں ملا (ہوا، بارش یا گرمی کی وجہ سے)۔" + note_ur, {"windows": [], "source": source})
     en = "; ".join(fmt_window(w, "en") for w in windows)
     ur = "؛ ".join(fmt_window(w, "ur") for w in windows)
     return Part(
         "weather",
-        f"Safe spray windows in {name_en} over the next 5 days: {en}. These limits are rules of thumb, not official advice; check the product label for its rain-free time." + note_en,
-        f"{name_ur} میں اگلے پانچ دنوں میں سپرے کے محفوظ اوقات: {ur}۔ یہ حدیں عام اصول ہیں، سرکاری مشورہ نہیں؛ دوا کے لیبل پر بارش سے محفوظ رہنے کا وقت ضرور دیکھیں۔" + note_ur,
+        f"Safe spray windows in {name_en} over the next {span_en} days: {en}. These limits are rules of thumb, not official advice; check the product label for its rain-free time." + note_en,
+        f"{name_ur} میں اگلے {span_ur} دنوں میں سپرے کے محفوظ اوقات: {ur}۔ یہ حدیں عام اصول ہیں، سرکاری مشورہ نہیں؛ دوا کے لیبل پر بارش سے محفوظ رہنے کا وقت ضرور دیکھیں۔" + note_ur,
         {"windows": windows, "source": source},
     )
 

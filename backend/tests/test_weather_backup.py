@@ -157,6 +157,14 @@ def agents_with_source(source):
     )
 
 
+def test_a_backup_answer_does_not_claim_five_days_of_coverage():
+    backup = ask("is it safe to spray tomorrow in Lahore?", agents_with_source(BACKUP_NAME))
+    assert "next 2 days" in backup["answer_en"] and "اگلے دو دنوں" in backup["answer_ur"]
+    assert "next 5 days" not in backup["answer_en"] and "پانچ" not in backup["answer_ur"]
+    normal = ask("is it safe to spray tomorrow in Lahore?", agents_with_source(PRIMARY_NAME))
+    assert "next 5 days" in normal["answer_en"] and "اگلے پانچ دنوں" in normal["answer_ur"]
+
+
 def test_a_weather_answer_from_the_backup_says_so_in_both_languages():
     r = ask("is it safe to spray tomorrow in Lahore?", agents_with_source(BACKUP_NAME))
     assert "Backup weather source" in r["answer_en"] and "متبادل موسمی ذریعہ" in r["answer_ur"]
