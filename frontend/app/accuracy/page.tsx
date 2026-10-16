@@ -234,9 +234,9 @@ export default function AccuracyPage() {
           <li>No wheat or cotton disease classifier that works on new cameras. Pakistani field photos are still needed.</li>
           <li>None of our field data comes from Pakistan (nearest public sources: China, Bangladesh).</li>
           <li>The question reader is keyword-based and was tested on questions we wrote; real farmers will word things differently.</li>
-          <li>No pesticide advice. Dose and safety must come from official Pakistani documents we do not have loaded yet, and the app never invents them.</li>
+          <li>Pesticide advice covers cotton only, and only what the Punjab bulletin prints (product and dose per acre). We could not check products against the national registered-pesticide list, and the bulletin has no protective-gear rules, so none are shown. The app never invents either.</li>
           <li>The satellite field check shows greenness (NDVI), a physical measurement, but its &quot;even or patchy&quot; reading uses thresholds we chose and has not been checked against ground truth.</li>
-          <li>Price forecasts do not beat the simple &quot;prices stay the same&quot; guess, so market advice is mostly &quot;no clear signal&quot;. Voice notes and satellite field checks are not built yet.</li>
+          <li>Price forecasts do not beat the simple &quot;prices stay the same&quot; guess, so market advice is mostly &quot;no clear signal&quot;. Voice notes are not built yet.</li>
         </ul>
       </section>
     </div>

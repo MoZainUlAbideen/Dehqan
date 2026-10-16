@@ -142,15 +142,16 @@ export default function Home() {
               <li>Estimates how much of the leaf is covered by disease spots.</li>
               <li>Finds low-wind, dry, mild-weather spray windows from a live five-day forecast.</li>
               <li>A safety guardrail that rejects unregistered or banned pesticides and any dose it cannot quote from a source.</li>
+              <li>Cotton pesticide options with the dose per acre copied from the official Punjab Agriculture Department bulletin, each with the printed line as proof.</li>
+              <li>Satellite field checks, mandi price history, and a question box that answers in English and Urdu.</li>
             </ul>
           </div>
           <div>
             <h2 className="font-display text-2xl font-semibold">Not built yet</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-ink-2 marker:text-gold">
-              <li>Wheat and cotton diagnosis that works on new cameras (the crops that matter most here).</li>
-              <li>Pesticide advice: it needs the official Pakistani registered-pesticide list and advisories.</li>
+              <li>Wheat and cotton diagnosis that works on new cameras. Wheat is trained but only half right on a second source (49% vs a 32% guess), so it is not in the app yet.</li>
+              <li>Checking pesticides against the national registered-pesticide list (we could not download it), and protective-gear rules (the bulletin has none). Wheat has no treatment table to copy from.</li>
               <li>Voice notes in Urdu, Pashto and Punjabi, and WhatsApp.</li>
-              <li>Satellite field checks and mandi price advice.</li>
             </ul>
           </div>
         </div>
