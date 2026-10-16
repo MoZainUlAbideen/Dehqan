@@ -138,7 +138,7 @@ export default function Home() {
             <h2 className="font-display text-2xl font-semibold">What works today</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-ink-2 marker:text-green">
               <li>Checks that a photo really shows a leaf before diagnosing.</li>
-              <li>Names a likely condition from 27 classes across 14 crops, or says it is not sure.</li>
+              <li>Names a likely condition from 27 classes across 13 crops, or says it is not sure.</li>
               <li>Estimates how much of the leaf is covered by disease spots.</li>
               <li>Finds low-wind, dry, mild-weather spray windows from a live five-day forecast.</li>
               <li>A safety guardrail that rejects unregistered or banned pesticides and any dose it cannot quote from a source.</li>

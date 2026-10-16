@@ -94,7 +94,7 @@ An end-to-end slice you can run locally (see "Run it"):
 
 Production safeguards in the API: upload type and size limits, photos downscaled before inference, per-IP rate limiting, CORS restricted to configured origins, and a 503 when models are not loaded. 72 backend tests pass, using fakes for the models and the weather service so they need no network.
 
-**Honest limits of the app right now:** the classifier covers 27 conditions across 14 crops, and **wheat and cotton are not among them**. At the live confidence setting (0.9) it answers about a quarter of field photos and is right on about four in five of those. It gives **no treatment advice** because the official pesticide lists are not loaded. The website was checked in a headless browser (dark theme); light mode and a full browser upload were not visually verified.
+**Honest limits of the app right now:** the classifier covers 27 conditions across 13 crops, and **wheat and cotton are not among them**. At the live confidence setting (0.9) it answers about a quarter of field photos and is right on about four in five of those. It gives **no treatment advice** because the official pesticide lists are not loaded. The website was checked in a headless browser (dark theme); light mode and a full browser upload were not visually verified.
 
 ## Built so far (Milestone 1)
 

@@ -18,6 +18,7 @@ GATE_THRESHOLD = 0.5
 ABSTAIN_THRESHOLD = 0.9
 ABSTAIN_THRESHOLD_NOTE = "At this threshold the model answered 24% of held-out field photos and was right on 79% of those."
 
+KNOWN_CROPS = "apple, blueberry, cherry, maize, grape, peach, bell pepper, potato, raspberry, soybean, squash, strawberry and tomato"
 EXTENSION_ADVICE = "Please show the plant to your local agriculture extension office."
 
 
@@ -47,7 +48,7 @@ class DiagnosisResult:
 
 BASE_LIMITATIONS = [
     "Preliminary AI guess, not a confirmed diagnosis.",
-    "The classifier knows 27 disease/healthy classes across 14 crops. Wheat and cotton are NOT covered.",
+    "The classifier knows 27 disease/healthy classes across 13 crops. Wheat and cotton are NOT covered.",
     "Treatment advice exists only for cotton pests (copied from the Punjab Agriculture Department bulletin) and is not checked against the national registered-pesticide list.",
 ]
 SEVERITY_LIMITATION = "Severity was trained on apple, soybean and wheat photos only; treat it as rough."
@@ -85,7 +86,7 @@ def diagnose(
             )
         return DiagnosisResult(
             status="uncertain", crop_score=score, confidence=pred.confidence,
-            message=f"I am not sure what this is. {EXTENSION_ADVICE}",
+            message=f"I am not sure what this is. I only know {KNOWN_CROPS}, and a leaf from another plant, a dried or autumn leaf, or a blurry photo will get this answer. {EXTENSION_ADVICE}",
             limitations=list(BASE_LIMITATIONS),
         )
 

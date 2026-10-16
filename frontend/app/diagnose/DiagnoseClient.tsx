@@ -125,7 +125,7 @@ function Placeholder() {
         <li>One leaf, in focus, in daylight, filling most of the photo.</li>
         <li>If it is not a leaf, Dehqan will ask for a better photo.</li>
         <li>If Dehqan is unsure, it says so and sends you to the extension office.</li>
-        <li>Right now it knows 27 conditions across 14 crops. <strong>Wheat and cotton are not covered yet.</strong></li>
+        <li>Right now it knows 27 conditions across 13 crops. <strong>Wheat and cotton are not covered yet.</strong></li>
       </ul>
     </div>
   );
