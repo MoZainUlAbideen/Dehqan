@@ -1,0 +1,49 @@
+{
+  "model": "frozen CLIP ViT-B/32 image embeddings + small classifier head",
+  "chosen_on_validation": {
+    "hidden": 512,
+    "weight_decay": 0.1,
+    "field_weight": 1.0,
+    "validation_accuracy": 0.6602
+  },
+  "held_out_field": {
+    "n_images": 768,
+    "accuracy": 0.6901,
+    "macro_f1": 0.673,
+    "majority_baseline_accuracy": 0.0742
+  },
+  "lab_test_accuracy": 0.9721,
+  "abstention_curve": [
+    {
+      "threshold": 0.0,
+      "coverage": 1.0,
+      "selective_accuracy": 0.6901
+    },
+    {
+      "threshold": 0.5,
+      "coverage": 0.9583,
+      "selective_accuracy": 0.7079
+    },
+    {
+      "threshold": 0.7,
+      "coverage": 0.8242,
+      "selective_accuracy": 0.7425
+    },
+    {
+      "threshold": 0.8,
+      "coverage": 0.7474,
+      "selective_accuracy": 0.7735
+    },
+    {
+      "threshold": 0.9,
+      "coverage": 0.6406,
+      "selective_accuracy": 0.813
+    },
+    {
+      "threshold": 0.95,
+      "coverage": 0.5664,
+      "selective_accuracy": 0.8345
+    }
+  ],
+  "previous_field_tuned_mobilenet_accuracy": 0.474
+}

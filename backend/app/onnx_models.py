@@ -17,6 +17,7 @@ from app.components import Components
 from app.fetch_models import MODELS_DIR
 from app.pipeline import Prediction
 from vision.crop_id import identify_crop, load_prompts
+from vision.probe import PROBE_FILE, load_probe, probe_predict
 from vision.severity import severity_from_mask
 
 ONNX_DIR = MODELS_DIR / "onnx"
@@ -104,7 +105,15 @@ def load_components(onnx_dir: Path = ONNX_DIR) -> Components:
         emb = clip.run(None, {"input": prep_clip(img)})[0]
         return leaf_score_from_embedding(emb, text, meta["clip_logit_scale"], meta["n_leaf_prompts"])
 
+    probe = load_probe(PROBE_FILE) if PROBE_FILE.exists() else None
+    if probe is not None and probe["classes"] != classes:
+        probe = None   # never mix a head with a different class order
+
     def classify(img: Image.Image) -> Prediction:
+        if probe is not None:   # CLIP embedding + small trained head: 61.6% vs 47.4% for the MobileNet on held-out field photos
+            probs = probe_predict(probe, clip.run(None, {"input": prep_clip(img)})[0])
+            i = int(probs.argmax())
+            return Prediction(label=classes[i], confidence=float(probs[i]))
         probs = softmax(clf.run(None, {"input": prep_classifier(img)})[0])[0]
         i = int(probs.argmax())
         return Prediction(label=classes[i], confidence=float(probs[i]))

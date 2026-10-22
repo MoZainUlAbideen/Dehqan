@@ -16,7 +16,7 @@ GATE_THRESHOLD = 0.5
 # Measured on held-out PlantDoc field photos (evals/field_tuned.json). Picking the threshold on the same
 # data makes these numbers optimistic.
 ABSTAIN_THRESHOLD = 0.9
-ABSTAIN_THRESHOLD_NOTE = "At this threshold the model answered 24% of held-out field photos and was right on 79% of those."
+ABSTAIN_THRESHOLD_NOTE = "At this threshold the model answered 56% of held-out field photos and was right on 81% of those."
 
 KNOWN_CROPS = "apple, blueberry, cherry, maize, grape, peach, bell pepper, potato, raspberry, soybean, squash, strawberry and tomato"
 EXTENSION_ADVICE = "Please show the plant to your local agriculture extension office."

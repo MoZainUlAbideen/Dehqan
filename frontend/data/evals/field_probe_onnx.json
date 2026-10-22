@@ -1,0 +1,8 @@
+{
+  "n_images": 768,
+  "accuracy_with_int8_onnx_embeddings": 0.6159,
+  "at_threshold_0.9": {
+    "coverage": 0.5612,
+    "selective_accuracy": 0.8121
+  }
+}

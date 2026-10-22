@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ApiError, ask, type AskResult } from "@/lib/api";
 import { useSlowHint, WAKING_MESSAGE } from "@/lib/useSlowHint";
+import { canListen, canSpeak, listen, speak, stopSpeaking, type VoiceLang } from "@/lib/voice";
+
+const noSubscribe = () => () => {};
 
 const EXAMPLES = [
   { text: "Is it safe to spray tomorrow in Lahore?", ur: false },
@@ -36,6 +39,39 @@ export default function AskClient() {
   const [showLang, setShowLang] = useState<"auto" | "en" | "ur">("auto");
   const slow = useSlowHint(state.kind === "loading", 8000);
 
+  // Voice chat: the microphone fills the question, sends it, and the answer is read aloud.
+  const micOk = useSyncExternalStore(noSubscribe, canListen, () => false);
+  const speakerOk = useSyncExternalStore(noSubscribe, canSpeak, () => false);
+  const [voiceLang, setVoiceLang] = useState<VoiceLang>("ur");
+  const [listening, setListening] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [voiceMsg, setVoiceMsg] = useState<string | null>(null);
+  const stopListening = useRef<() => void>(() => {});
+
+  function readAloud(r: AskResult, l: VoiceLang = r.language === "ur" ? "ur" : "en") {
+    setSpeaking(true);
+    const ok = speak(l === "ur" ? r.answer_ur : r.answer_en, l, () => setSpeaking(false));
+    if (!ok) {
+      setSpeaking(false);
+      setVoiceMsg(l === "ur"
+        ? "This device has no Urdu voice installed, so the answer cannot be read aloud. Read it on screen, or try your phone."
+        : "This device has no English voice to read the answer aloud.");
+    }
+  }
+
+  function startListening() {
+    setVoiceMsg(null);
+    stopSpeaking();
+    setSpeaking(false);
+    setListening(true);
+    stopListening.current = listen(
+      voiceLang,
+      (t) => { setText(t); submit(t, true); },
+      (m) => setVoiceMsg(m),
+      () => setListening(false),
+    );
+  }
+
   // Answers the linked question. State is only set in the request's callbacks, never synchronously in the effect.
   useEffect(() => {
     if (!linked) return;
@@ -48,13 +84,13 @@ export default function AskClient() {
     };
   }, [linked]);
 
-  function submit(q: string) {
+  function submit(q: string, aloud = false) {
     const question = q.trim();
     if (!question) return;
     setState({ kind: "loading" });
     setShowLang("auto");
     ask(question, coords?.lat, coords?.lon)
-      .then((result) => setState({ kind: "ok", result }))
+      .then((result) => { setState({ kind: "ok", result }); if (aloud) readAloud(result, voiceLang); })
       .catch((e) => setState({ kind: "error", message: e instanceof ApiError ? e.message : "Something went wrong." }));
   }
 
@@ -84,6 +120,24 @@ export default function AskClient() {
           <button type="submit" disabled={state.kind === "loading" || !text.trim()} className="btn-primary rounded-lg px-5 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-60">
             {state.kind === "loading" ? "Thinking…" : "Ask"}
           </button>
+          {micOk ? (
+            <span className="flex items-center gap-2">
+              <button type="button" onClick={listening ? () => stopListening.current() : startListening} aria-pressed={listening}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold ${listening ? "bg-bad text-white" : "btn-ghost"}`}>
+                {listening ? "● Listening… (tap to stop)" : "🎤 Speak your question"}
+              </button>
+              <span className="flex gap-1 text-xs" role="group" aria-label="Voice language">
+                {(["ur", "en"] as const).map((l) => (
+                  <button key={l} type="button" onClick={() => setVoiceLang(l)} aria-pressed={voiceLang === l}
+                    className={`rounded px-2 py-0.5 font-semibold ${voiceLang === l ? "bg-green text-green-ink" : "border border-line text-ink-2"}`}>
+                    {l === "en" ? "English" : "اردو"}
+                  </button>
+                ))}
+              </span>
+            </span>
+          ) : (
+            <span className="text-xs text-ink-3">Voice input needs Chrome, Edge or Safari.</span>
+          )}
           <button type="button" onClick={useMyLocation} className="btn-ghost rounded-lg px-4 py-2 text-sm font-semibold">
             {coords ? "Location added ✓" : "Use my location"}
           </button>
@@ -91,6 +145,8 @@ export default function AskClient() {
           <span className="text-xs text-ink-3">{text.length}/500</span>
         </div>
         {locError && <p role="alert" className="mt-2 text-sm text-bad">{locError}</p>}
+        {voiceMsg && <p role="alert" className="mt-2 text-sm text-bad">{voiceMsg}</p>}
+        <p className="mt-3 text-xs text-ink-3">Voice uses your browser&apos;s built-in speech recognition (the audio goes to the browser maker&apos;s service, not to Dehqan) and a voice installed on your device. Urdu and English only.</p>
         <p className="mt-3 text-xs text-ink-3">Adding your location lets Dehqan answer weather, nearest-market price and satellite questions without you naming a city. It is used for this question only and not stored.</p>
       </form>
 
@@ -130,6 +186,13 @@ export default function AskClient() {
             <div className={`mt-4 space-y-3 whitespace-pre-line ${lang === "ur" ? "font-urdu text-xl" : "text-lg"}`} lang={lang} dir={lang === "ur" ? "rtl" : "ltr"}>
               {lang === "ur" ? result.answer_ur : result.answer_en}
             </div>
+
+            {speakerOk && (
+              <button type="button" onClick={() => (speaking ? (stopSpeaking(), setSpeaking(false)) : readAloud(result, lang))}
+                className="btn-ghost mt-4 rounded-lg px-4 py-2 text-sm font-semibold">
+                {speaking ? "■ Stop" : lang === "ur" ? "🔊 جواب سنیں (Listen)" : "🔊 Listen to the answer"}
+              </button>
+            )}
 
             {result.needs && <NextStep needs={result.needs} />}
 

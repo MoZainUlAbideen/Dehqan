@@ -94,7 +94,7 @@ An end-to-end slice you can run locally (see "Run it"):
 
 Production safeguards in the API: upload type and size limits, photos downscaled before inference, per-IP rate limiting, CORS restricted to configured origins, and a 503 when models are not loaded. 72 backend tests pass, using fakes for the models and the weather service so they need no network.
 
-**Honest limits of the app right now:** the classifier covers 27 conditions across 13 crops, and **wheat and cotton are not among them**. At the live confidence setting (0.9) it answers about a quarter of field photos and is right on about four in five of those. It gives **no treatment advice** because the official pesticide lists are not loaded. The website was checked in a headless browser (dark theme); light mode and a full browser upload were not visually verified.
+**Honest limits of the app right now:** the classifier (CLIP + trained head, 61.6% on held-out field photos) covers 27 conditions across 13 crops, and **wheat and cotton are not among them**. At the live confidence setting (0.9) it answers about 56% of field photos and is right on about four in five of those. It gives **no treatment advice** because the official pesticide lists are not loaded. The website was checked in a headless browser (dark theme); light mode and a full browser upload were not visually verified.
 
 ## Built so far (Milestone 1)
 
@@ -220,6 +220,24 @@ A farmer sent a photo of wheat ears and got a bare "I'm not sure". `vision/crop_
 - **47% is still not usable for spray advice.** More than half of field photos get the wrong label.
 - **Abstention does not rescue it.** The model is overconfident: reaching 90% accuracy means answering only **9%** of photos (95% accuracy: 6%), so at this stage it would defer almost every time.
 - **Caveats:** PlantDoc is scraped from the web and may contain near-duplicate photos on both sides of the split, so 47.4% may be optimistic. One run, one seed, 3 epochs on CPU with a small model; there is room to improve, and we have not yet tried a larger backbone or stronger augmentation.
+
+### Field accuracy v3: a CLIP embedding plus a small trained head
+
+47% was not good enough, so `vision/embed_features.py` turns every photo into a frozen CLIP image embedding and `vision/train_probe.py` trains a small head (512 hidden units) on top. Same data, same split, same 768 held-out field photos. The head's settings were chosen on a validation slice cut from the *training* field photos; the held-out photos were scored once. Results: `evals/field_probe.json` (B/32), `evals/field_probe_b16.json` (B/16), `evals/field_probe_onnx.json` (what the server runs).
+
+| Model | Field accuracy (answer everything) | At 0.9 confidence: share answered / right on those |
+|---|---|---|
+| MobileNetV3-Small fine-tuned (before) | 47.4% | 24% / 79% |
+| CLIP B/32 + head, PyTorch | 63.8% | 62% / 79% |
+| **CLIP B/32 + head, as served (int8 ONNX)** | **61.6%** | **56% / 81%** |
+| CLIP B/16 + head, PyTorch (not deployed) | 69.0% | 64% / 81% |
+| B/32 + B/16 averaged (not deployed) | 69.7% | 50% / 86% |
+
+- **The target was 70% and we did not reach it.** The best single model reaches 69.0%, the average of two 69.7%, and the deployed one 61.6%. I did not tune on the held-out photos to cross the line.
+- The deployed model is B/32 because it reuses the CLIP image model the server already runs (no new files, no extra memory). B/16 needs a bigger export and new text embeddings for the leaf gate; it is the next step.
+- The compressed (int8) server model loses about 2 points against PyTorch.
+- Same caveat as before: PlantDoc may contain near-duplicate photos on both sides of the split, so these numbers may be optimistic.
+
 
 ### Severity grading from lesion area
 
